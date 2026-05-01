@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TK Fame List</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+  import {
+    getFirestore, collection, doc, getDocs, getDoc,
+    addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAB9jJk4XNd3RmSJ8dMafthQMtkiqMBQZA",
+    authDomain: "fame-list-48cae.firebaseapp.com",
+    projectId: "fame-list-48cae",
+    storageBucket: "fame-list-48cae.firebasestorage.app",
+    messagingSenderId: "517199083388",
+    appId: "1:517199083388:web:b1237c6d4302bb008596f9",
+    measurementId: "G-WX0BVMYCJB"
+  };
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(firebaseApp);
+  const db = getFirestore(firebaseApp);
+
+  window._db = db;
+  window._fs = {
+    collection, doc, getDocs, getDoc, addDoc, setDoc,
+    updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp
+  };
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebaseReady'));
+</script>
+<style>
+:root{--bg:#06090f;--s:#0d1321;--s2:#131c30;--b:#1a2540;--a:#00e5ff;--a2:#ff3cac;--a3:#7b61ff;--t:#e8edf5;--m:#4a5c7a;--ok:#00ff88;--w:#ffb800;--err:#ff4455;--gold:#ffd700;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--a3);border-radius:2px;}
+.hidden{display:none!important;}
+.page{position:relative;z-index:1;min-height:100vh;}
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.ab{position:absolute;border-radius:50%;filter:blur(90px);animation:aur 14s ease-in-out infinite alternate;}
+.ab1{width:700px;height:700px;background:rgba(0,229,255,.08);top:-200px;left:-150px;}
+.ab2{width:600px;height:600px;background:rgba(255,60,172,.07);bottom:-200px;right:-150px;animation-delay:-5s;}
+.ab3{width:500px;height:500px;background:rgba(123,97,255,.06);top:35%;left:25%;animation-delay:-10s;}
+@keyframes aur{0%{transform:translate(0,0) scale(1);}100%{transform:translate(70px,50px) scale(1.2);}}
+.grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,229,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.025) 1px,transparent 1px);background-size:64px 64px;}
+.fp{position:fixed;pointer-events:none;z-index:0;border-radius:50%;animation:fpf linear infinite;}
+@keyframes fpf{0%{transform:translateY(100vh) rotate(0deg);opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{transform:translateY(-100px) rotate(720deg);opacity:0;}}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;height:64px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,9,15,.85);backdrop-filter:blur(28px);border-bottom:1px solid rgba(255,255,255,.055);}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;letter-spacing:-1px;display:flex;align-items:center;gap:5px;cursor:pointer;}
+.ln{color:var(--a);}.lx{color:var(--t);}
+.lp{width:7px;height:7px;border-radius:50%;background:var(--a2);box-shadow:0 0 10px var(--a2);animation:lpa 2s infinite;}
+@keyframes lpa{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.5);}}
+.navr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .2s;text-decoration:none;white-space:nowrap;}
+.btg{background:#229ED9;color:#fff;font-weight:700;}.btg:hover{background:#1b8bbf;box-shadow:0 0 28px rgba(34,158,217,.45);transform:translateY(-1px);}
+.bpr{background:var(--a);color:#000;font-weight:700;}.bpr:hover{box-shadow:0 0 28px rgba(0,229,255,.45);transform:translateY(-1px);}
+.bgh{background:transparent;color:var(--t);border:1px solid var(--b);}.bgh:hover{border-color:var(--a3);background:rgba(123,97,255,.06);}
+.bdn{background:rgba(255,68,85,.1);color:var(--err);border:1px solid rgba(255,68,85,.25);}.bdn:hover{background:rgba(255,68,85,.2);}
+.bgr{background:linear-gradient(135deg,var(--a3),var(--a2));color:#fff;font-weight:700;}.bgr:hover{box-shadow:0 0 28px rgba(123,97,255,.45);transform:translateY(-1px);}
+.bsm{padding:6px 12px;font-size:12px;border-radius:8px;}.blg{padding:15px 32px;font-size:16px;border-radius:12px;}.bfl{width:100%;justify-content:center;}
+.ub{display:flex;align-items:center;gap:8px;padding:5px 14px 5px 7px;background:var(--s);border:1px solid var(--b);border-radius:10px;font-size:13px;}
+.uav{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--a3),var(--a2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;overflow:hidden;flex-shrink:0;}
+.uav img{width:100%;height:100%;object-fit:cover;}
+.rb{font-size:10px;padding:2px 7px;border-radius:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.radmin{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid rgba(255,215,0,.3);}
+.rmoder{background:rgba(0,229,255,.15);color:var(--a);border:1px solid rgba(0,229,255,.3);}
+.ruser{background:rgba(74,92,122,.2);color:var(--m);border:1px solid var(--b);}
+.hero{padding:130px 24px 80px;max-width:860px;margin:0 auto;text-align:center;}
+.hchip{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);border-radius:24px;font-size:11px;font-weight:600;color:var(--a);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:28px;animation:fu .8s ease both;}
+h1{font-family:'Syne',sans-serif;font-size:clamp(40px,8vw,80px);font-weight:800;line-height:1.0;letter-spacing:-3px;margin-bottom:20px;animation:fu 1s ease .15s both;}
+.w1{display:block;color:var(--t);}
+.w2{display:block;background:linear-gradient(120deg,var(--a) 0%,var(--a3) 45%,var(--a2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hsub{font-size:17px;color:var(--m);line-height:1.7;margin-bottom:44px;max-width:480px;margin-left:auto;margin-right:auto;animation:fu 1s ease .3s both;}
+.hbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:60px;animation:fu 1s ease .45s both;}
+@keyframes fu{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+.ss{display:flex;gap:48px;justify-content:center;flex-wrap:wrap;animation:fu 1s ease .6s both;}
+.ssi{text-align:center;}
+.ssn{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;background:linear-gradient(135deg,var(--a),var(--a3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ssl{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.sw{max-width:560px;margin:0 auto 36px;padding:0 20px;position:relative;}
+.si{width:100%;padding:15px 52px 15px 20px;background:var(--s);border:1px solid var(--b);border-radius:14px;color:var(--t);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:all .25s;}
+.si::placeholder{color:var(--m);}.si:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(0,229,255,.1);}
+.sico{position:absolute;right:38px;top:50%;transform:translateY(-50%);color:var(--m);font-size:18px;pointer-events:none;}
+.filters{max-width:1200px;margin:0 auto 36px;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap;}
+.fc{padding:8px 18px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--b);background:var(--s);color:var(--m);transition:all .2s;}
+.fc:hover{border-color:var(--a3);color:var(--t);}.fc.on{background:rgba(0,229,255,.1);border-color:var(--a);color:var(--a);}
+.catsec{max-width:1200px;margin:0 auto;padding:0 20px 100px;}
+.sechd{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:22px;display:flex;align-items:center;gap:14px;}
+.sechd::after{content:'';flex:1;height:1px;background:var(--b);}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.card{background:var(--s);border:1px solid var(--b);border-radius:18px;overflow:hidden;cursor:pointer;transition:all .3s;position:relative;animation:ci .5s ease both;}
+@keyframes ci{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+.card:hover{border-color:rgba(123,97,255,.5);transform:translateY(-5px);box-shadow:0 24px 56px rgba(0,0,0,.5),0 0 40px rgba(123,97,255,.06);}
+.cth{width:100%;height:170px;background:var(--s2);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.cth::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,229,255,.04),rgba(255,60,172,.04));}
+.cth img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;z-index:1;}
+.cte{font-size:64px;position:relative;z-index:1;filter:drop-shadow(0 4px 16px rgba(0,0,0,.4));transition:transform .3s;}
+.card:hover .cte{transform:scale(1.1);}
+.cbdg{position:absolute;top:10px;right:10px;z-index:2;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
+.cbody{padding:16px;}
+.cname{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:7px;}
+.ctrow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;}
+.cdesc{font-size:13px;color:var(--m);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.tag{padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.tcat{background:rgba(0,229,255,.12);color:var(--a);border:1px solid rgba(0,229,255,.25);}
+.tgar{background:rgba(0,255,136,.12);color:var(--ok);border:1px solid rgba(0,255,136,.25);}
+.tscam{background:rgba(255,68,85,.12);color:var(--err);border:1px solid rgba(255,68,85,.25);}
+.tpin{background:rgba(255,184,0,.12);color:var(--w);border:1px solid rgba(255,184,0,.25);}
+.tmic{background:rgba(123,97,255,.12);color:var(--a3);border:1px solid rgba(123,97,255,.25);}
+.sb{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.sbp{background:rgba(255,184,0,.12);color:var(--w);border:1px solid rgba(255,184,0,.25);}
+.sba{background:rgba(0,255,136,.12);color:var(--ok);border:1px solid rgba(0,255,136,.25);}
+.sbr{background:rgba(255,68,85,.12);color:var(--err);border:1px solid rgba(255,68,85,.25);}
+.auth-scr{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.auth-c{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:48px 40px;max-width:440px;width:100%;text-align:center;position:relative;overflow:hidden;animation:ac .6s cubic-bezier(.16,1,.3,1) both;}
+@keyframes ac{from{opacity:0;transform:translateY(32px) scale(.96);}to{opacity:1;transform:none;}}
+.auth-c::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--a),var(--a3),var(--a2));}
+.agl{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.1),transparent 70%);pointer-events:none;}
+.aico{width:88px;height:88px;border-radius:22px;margin:0 auto 24px;background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(123,97,255,.15));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-size:40px;animation:aif 3s ease-in-out infinite;}
+@keyframes aif{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.atit{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.asub{color:var(--m);font-size:14px;line-height:1.6;margin-bottom:28px;}
+.fg{margin-bottom:20px;}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--m);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;}
+.fl .req{color:var(--a2);}
+.fi,.fsel,.fta{width:100%;padding:12px 16px;background:var(--s2);border:1px solid var(--b);border-radius:10px;color:var(--t);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all .2s;}
+.fi::placeholder,.fta::placeholder{color:var(--m);}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--a);box-shadow:0 0 0 3px rgba(0,229,255,.08);}
+.fsel{cursor:pointer;}.fsel option{background:var(--s2);}
+.fta{resize:vertical;min-height:120px;line-height:1.55;}
+.cct{font-size:11px;color:var(--m);text-align:right;margin-top:4px;}
+.fpx{display:flex;align-items:center;gap:8px;}
+.fpxl{padding:12px 14px;background:var(--s2);border:1px solid var(--b);border-radius:10px;font-size:13px;color:var(--m);white-space:nowrap;}
+.avw{display:flex;align-items:center;gap:16px;}
+.avp{width:76px;height:76px;border-radius:14px;background:var(--s2);border:2px dashed var(--b);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;transition:border-color .2s;position:relative;}
+.avp:hover{border-color:var(--a3);}
+.avp img{width:100%;height:100%;object-fit:cover;border-radius:12px;position:absolute;inset:0;}
+.trow{display:flex;gap:8px;flex-wrap:wrap;}
+.tt{padding:7px 13px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--b);background:var(--s2);color:var(--m);transition:all .2s;}
+.tt.on{background:rgba(0,229,255,.1);border-color:var(--a);color:var(--a);}
+.tt:hover{border-color:var(--a3);}
+.apw{max-width:600px;margin:0 auto;padding:40px 20px;}
+.pgtit{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px;margin-bottom:6px;}
+.pgsub{color:var(--m);font-size:14px;margin-bottom:28px;line-height:1.6;}
+.fcard{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:28px;}
+.admw{display:flex;min-height:calc(100vh - 64px);padding-top:64px;}
+.aside{width:220px;min-height:calc(100vh - 64px);background:var(--s);border-right:1px solid var(--b);padding:20px 10px;flex-shrink:0;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;}
+.albl{font-size:10px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:1px;padding:0 12px;margin-bottom:8px;}
+.ai{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:14px;cursor:pointer;color:var(--m);transition:all .15s;margin-bottom:3px;}
+.ai:hover{background:var(--s2);color:var(--t);}.ai.on{background:rgba(0,229,255,.08);color:var(--a);}
+.act{margin-left:auto;min-width:20px;height:20px;border-radius:5px;background:var(--a2);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+.amain{flex:1;padding:32px;overflow:auto;}
+.ahd{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:10px;}
+.aptit{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.sc{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:transform .2s;}
+.sc:hover{transform:translateY(-2px);}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc1::before{background:var(--a);}.sc2::before{background:var(--a3);}.sc3::before{background:var(--a2);}.sc4::before{background:var(--ok);}
+.scl{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.scn{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;}
+.sc1 .scn{color:var(--a);}.sc2 .scn{color:var(--a3);}.sc3 .scn{color:var(--a2);}.sc4 .scn{color:var(--ok);}
+.alist{display:flex;flex-direction:column;gap:12px;}
+.ai2{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:18px;display:flex;align-items:flex-start;gap:16px;transition:all .2s;position:relative;}
+.ai2:hover{border-color:rgba(123,97,255,.4);}
+.ai2.isn{border-left:3px solid var(--a);}
+.aav{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--a3),var(--a2));display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden;position:relative;}
+.aav img{width:100%;height:100%;object-fit:cover;}
+.nd{position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:var(--a2);border:2px solid var(--bg);animation:ndp 2s infinite;}
+@keyframes ndp{0%,100%{box-shadow:0 0 0 0 rgba(255,60,172,.5);}50%{box-shadow:0 0 0 5px rgba(255,60,172,0);}}
+.ainf{flex:1;min-width:0;}
+.an{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:5px;}
+.am{font-size:12px;color:var(--m);display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.ad{font-size:13px;color:var(--m);line-height:1.5;}
+.aac{display:flex;gap:8px;flex-shrink:0;flex-direction:column;}
+.utab{background:var(--s);border:1px solid var(--b);border-radius:14px;overflow:hidden;}
+.ur{display:grid;grid-template-columns:44px 1fr auto auto auto;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--b);font-size:14px;}
+.ur:last-child{border-bottom:none;}
+.ur.uh{background:var(--s2);font-size:11px;font-weight:700;color:var(--m);text-transform:uppercase;letter-spacing:.5px;}
+.ur:not(.uh):hover{background:rgba(255,255,255,.015);}
+.uav2{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--a3),var(--a2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;overflow:hidden;}
+.uav2 img{width:100%;height:100%;object-fit:cover;}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;animation:ovf .2s ease;}
+@keyframes ovf{from{opacity:0;}to{opacity:1;}}
+.modal{background:var(--s);border:1px solid var(--b);border-radius:22px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;animation:mi .3s cubic-bezier(.16,1,.3,1);}
+@keyframes mi{from{opacity:0;transform:translateY(20px) scale(.97);}to{opacity:1;transform:none;}}
+.mhd{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.mtit{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;}
+.mx{width:32px;height:32px;border-radius:8px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;}
+.mx:hover{color:var(--t);border-color:var(--err);}
+.mbody{padding:0 24px 24px;}
+.dhd{display:flex;gap:20px;align-items:flex-start;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--b);}
+.dav{width:96px;height:96px;border-radius:20px;background:linear-gradient(135deg,var(--a3),var(--a2));display:flex;align-items:center;justify-content:center;font-size:44px;flex-shrink:0;overflow:hidden;}
+.dav img{width:100%;height:100%;object-fit:cover;}
+.dn{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;}
+.du{color:var(--m);font-size:13px;margin-bottom:12px;}
+.dt{display:flex;gap:6px;flex-wrap:wrap;}
+.empty{text-align:center;padding:60px 20px;color:var(--m);}
+.ei{font-size:52px;margin-bottom:14px;}
+.empty h3{font-family:'Syne',sans-serif;font-size:17px;color:var(--t);margin-bottom:6px;}
+.lder{display:flex;align-items:center;justify-content:center;gap:7px;padding:48px;}
+.ld{width:9px;height:9px;border-radius:50%;animation:ldb 1.2s infinite ease-in-out;}
+.ld:nth-child(1){background:var(--a);}.ld:nth-child(2){background:var(--a3);animation-delay:.2s;}.ld:nth-child(3){background:var(--a2);animation-delay:.4s;}
+@keyframes ldb{0%,80%,100%{transform:scale(.5);opacity:.4;}40%{transform:scale(1.1);opacity:1;}}
+.ntf{position:fixed;bottom:24px;right:24px;z-index:999;padding:14px 20px;background:var(--s);border:1px solid var(--b);border-radius:14px;display:flex;align-items:center;gap:12px;font-size:14px;box-shadow:0 20px 48px rgba(0,0,0,.6);max-width:340px;animation:nfi .35s cubic-bezier(.16,1,.3,1);}
+@keyframes nfi{from{transform:translateX(110%);opacity:0;}to{transform:none;opacity:1;}}
+.ntf.ok{border-color:rgba(0,255,136,.3);}.ntf.err{border-color:rgba(255,68,85,.3);}
+
+/* Token input highlight */
+.token-box{position:relative;}
+.token-box .fi{letter-spacing:.08em;font-family:monospace;font-size:15px;}
+.token-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;text-align:left;}
+.tstep{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:rgba(255,255,255,.03);border:1px solid var(--b);border-radius:10px;font-size:13px;color:var(--m);line-height:1.5;}
+.tstep-n{min-width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--a3),var(--a));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;margin-top:1px;}
+
+@media(max-width:768px){.admw{flex-direction:column;}.aside{width:100%;height:auto;position:static;display:flex;flex-wrap:wrap;gap:4px;padding:10px;border-right:none;border-bottom:1px solid var(--b);}.albl{display:none;}.amain{padding:16px;}.ur{grid-template-columns:36px 1fr auto;}.cr,.cd{display:none;}.auth-c{padding:32px 24px;}.aac{flex-direction:row;}.hero{padding:100px 16px 60px;}nav{padding:0 14px;}}
+</style>
+</head>
+<body>
+<canvas id="snow"></canvas>
+<div class="aurora"><div class="ab ab1"></div><div class="ab ab2"></div><div class="ab ab3"></div></div>
+<div class="grid"></div>
+
+<nav>
+  <div class="logo" onclick="goHome()">
+    <span class="ln">TK</span><div class="lp"></div><span class="lx">Fame List</span>
+  </div>
+  <div class="navr" id="navR">
+    <button class="btn btg bsm" onclick="showAuth()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>
+      Войти
+    </button>
+  </div>
+</nav>
+
+<!-- AUTH -->
+<div class="page" id="authPage" style="display:none;">
+  <div class="auth-scr">
+    <div class="auth-c">
+      <div class="agl"></div>
+      <div class="aico">🤖</div>
+      <div class="atit">Войти в TK Fame List</div>
+      <div class="asub">Получите токен в Telegram-боте и введите его ниже для входа на сайт</div>
+
+      <!-- Steps -->
+      <div class="token-steps">
+        <div class="tstep"><div class="tstep-n">1</div><div>Нажмите кнопку ниже, чтобы открыть бота в Telegram</div></div>
+        <div class="tstep"><div class="tstep-n">2</div><div>Напишите боту <b style="color:var(--a);">/token</b> — он пришлёт вам одноразовый код</div></div>
+        <div class="tstep"><div class="tstep-n">3</div><div>Скопируйте код и вставьте его в поле ниже</div></div>
+      </div>
+
+      <!-- Open Bot -->
+      <a href="https://t.me/tkfamelistbot" target="_blank" class="btn btg bfl blg" style="margin-bottom:20px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>
+        Открыть бота (@tkfamelistbot)
+      </a>
+
+      <!-- Token input -->
+      <div class="fg" style="text-align:left;">
+        <label class="fl">Токен из бота <span class="req">*</span></label>
+        <div class="token-box">
+          <input class="fi" id="tokenInput" placeholder="Вставьте токен сюда..." autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter')doLoginToken()" oninput="this.value=this.value.trim()"/>
+        </div>
+      </div>
+
+      <button class="btn bpr bfl" onclick="doLoginToken()" id="loginBtn">🔐 Войти по токену</button>
+      <button class="btn bgh bsm bfl" style="margin-top:10px;" onclick="goHome()">← На главную</button>
+
+      <div style="margin-top:20px;padding:12px;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12);border-radius:10px;font-size:12px;color:var(--m);line-height:1.6;text-align:left;">
+        🔐 Токен действителен <b style="color:var(--a);">10 минут</b> и может быть использован только один раз. После входа токен сгорает.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="page" id="mainPage">
+  <div class="hero">
+    <div class="hchip">⚡ Топ Telegram Community</div>
+    <h1><span class="w1">Медиа-личности</span><span class="w2">Telegram</span></h1>
+    <p class="hsub">Полный каталог известных участников сообщества с профилями, историями и верификацией</p>
+    <div class="hbtns" id="heroActs">
+      <button class="btn btg blg" onclick="showAuth()">Войти через Telegram</button>
+      <button class="btn bgh blg" onclick="scrollCat()">Смотреть каталог</button>
+    </div>
+    <div class="ss">
+      <div class="ssi"><div class="ssn" id="tc">0</div><div class="ssl">Участников</div></div>
+      <div class="ssi"><div class="ssn">12</div><div class="ssl">Категорий</div></div>
+      <div class="ssi"><div class="ssn" id="pc">0</div><div class="ssl">На рассмотрении</div></div>
+    </div>
+  </div>
+  <div class="sw"><input class="si" id="srch" placeholder="Поиск по имени, описанию..." oninput="filterCards()"/><div class="sico">🔍</div></div>
+  <div class="filters" id="filRow">
+    <div class="fc on" onclick="setF('all',this)">Все</div>
+    <div class="fc" onclick="setF('Медийка',this)">Медийки</div>
+    <div class="fc" onclick="setF('Гарант',this)">Гаранты</div>
+    <div class="fc" onclick="setF('Дизайнер',this)">Дизайнеры</div>
+    <div class="fc" onclick="setF('Кодер',this)">Кодеры</div>
+    <div class="fc" onclick="setF('Канал',this)">Каналы</div>
+    <div class="fc" onclick="setF('Скам',this)">Скам</div>
+  </div>
+  <div class="catsec" id="catSect">
+    <div class="sechd">Каталог участников</div>
+    <div class="cgrid" id="cGrid"><div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
+  </div>
+</div>
+
+<!-- APP PAGE -->
+<div class="page" id="appPage" style="display:none;padding-top:64px;">
+  <div class="apw">
+    <button class="btn bgh bsm" onclick="goHome()" style="margin-bottom:22px;">← Назад</button>
+    <div class="pgtit">📝 Подать заявку</div>
+    <div class="pgsub">Заполните анкету. Заявка будет рассмотрена модераторами.</div>
+    <button class="btn bgh" style="margin-bottom:28px;" onclick="showMyApps()">👁 Мои заявки</button>
+    <div class="fcard">
+      <div class="fg">
+        <label class="fl">Аватар</label>
+        <div class="avw">
+          <div class="avp" id="avP"><span id="avIco">🖼️</span></div>
+          <div>
+            <input type="file" id="avFile" accept="image/*" style="display:none;" onchange="handleAv(this)"/>
+            <button class="btn bgh bsm" onclick="document.getElementById('avFile').click()">📁 Выбрать фото</button>
+            <div style="font-size:11px;color:var(--m);margin-top:6px;">PNG, JPG, GIF до 6 МБ</div>
+            <div id="avSt" style="font-size:11px;color:var(--ok);margin-top:3px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Имя <span class="req">*</span></label><input class="fi" id="aN" placeholder="Введите ваше имя"/></div>
+      <div class="fg"><label class="fl">Username <span class="req">*</span></label><div class="fpx"><span class="fpxl">@</span><input class="fi" id="aUN" placeholder="username" style="flex:1;"/></div></div>
+      <div class="fg"><label class="fl">Категория <span class="req">*</span></label>
+        <select class="fsel" id="aCat">
+          <option value="">Выберите категорию</option>
+          <option>Медийка</option><option>Гарант</option><option>Дизайнер</option>
+          <option>Кодер</option><option>Эдитор</option><option>Канал</option>
+          <option>Спонсор</option><option>Скам</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Канал / Чат</label><div class="fpx"><span class="fpxl">t.me/</span><input class="fi" id="aCh" placeholder="channel_name" style="flex:1;"/></div></div>
+      <div class="fg">
+        <label class="fl">Метки</label>
+        <div class="trow" id="tagRow">
+          <div class="tt" data-tag="гарант" onclick="togT(this)">🔒 гарант</div>
+          <div class="tt" data-tag="тиктокер" onclick="togT(this)">🎵 тиктокер</div>
+          <div class="tt" data-tag="не в км" onclick="togT(this)">❌ не в км</div>
+          <div class="tt" data-tag="стример" onclick="togT(this)">🎮 стример</div>
+          <div class="tt" data-tag="ютубер" onclick="togT(this)">▶️ ютубер</div>
+          <div class="tt" data-tag="закреп" onclick="togT(this)">📌 закреп</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Описание <span class="req">*</span></label>
+        <textarea class="fta" id="aDesc" placeholder="Расскажите о себе подробнее..." maxlength="5000" oninput="document.getElementById('dcc').textContent=this.value.length"></textarea>
+        <div class="cct"><span id="dcc">0</span>/5000</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button class="btn bgh" style="flex:1;justify-content:center;" onclick="prevApp()">👁 Предпросмотр</button>
+        <button class="btn bgr" style="flex:1;justify-content:center;" onclick="submitApp()">📤 Отправить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="adminPage" style="display:none;">
+  <div class="admw">
+    <div class="aside">
+      <div class="albl">Навигация</div>
+      <div class="ai on" id="sApps" onclick="aTab('apps',this)">📋 Заявки <span class="act" id="appCt">0</span></div>
+      <div class="ai" id="sCat" onclick="aTab('cat',this)">📚 Каталог</div>
+      <div class="ai" id="sUsers" onclick="aTab('users',this)">👥 Пользователи</div>
+      <div class="ai hidden" id="sModers" onclick="aTab('moders',this)">🛡 Модераторы</div>
+      <button class="btn bgh bsm bfl" onclick="goHome()" style="margin-top:20px;">← На сайт</button>
+    </div>
+    <div class="amain">
+      <div id="tApps">
+        <div class="ahd">
+          <div class="aptit">📋 Заявки</div>
+          <select class="fsel" style="width:auto;" onchange="renderAdmApps(this.value)">
+            <option value="pending">Ожидают</option><option value="approved">Одобрены</option>
+            <option value="rejected">Отклонены</option><option value="all">Все</option>
+          </select>
+        </div>
+        <div class="sgrid" id="admStats"></div>
+        <div class="alist" id="admList"></div>
+      </div>
+      <div id="tCat" style="display:none;">
+        <div class="ahd"><div class="aptit">📚 Каталог</div></div>
+        <div class="cgrid" id="admCat"></div>
+      </div>
+      <div id="tUsers" style="display:none;">
+        <div class="ahd"><div class="aptit">👥 Пользователи</div></div>
+        <div class="utab" id="usrTab"></div>
+      </div>
+      <div id="tModers" style="display:none;">
+        <div class="ahd"><div class="aptit">🛡 Модераторы</div></div>
+        <div style="background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:20px;">
+          <div style="font-size:13px;color:var(--m);margin-bottom:12px;">Назначить модератора по Telegram username:</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="fpx" style="flex:1;min-width:200px;"><span class="fpxl">@</span><input class="fi" id="modInp" placeholder="username" style="flex:1;"/></div>
+            <button class="btn bpr" onclick="assignMod()">Назначить</button>
+          </div>
+        </div>
+        <div class="utab" id="modTab"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="ov hidden" id="profOv" onclick="cOv(event,'profOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">Профиль</div><button class="mx" onclick="cOvId('profOv')">✕</button></div>
+    <div class="mbody" id="profBody"></div>
+  </div>
+</div>
+<div class="ov hidden" id="myAppsOv" onclick="cOv(event,'myAppsOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">Мои заявки</div><button class="mx" onclick="cOvId('myAppsOv')">✕</button></div>
+    <div class="mbody" id="myAppsB"></div>
+  </div>
+</div>
+<div class="ov hidden" id="prevOv" onclick="cOv(event,'prevOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">Предпросмотр</div><button class="mx" onclick="cOvId('prevOv')">✕</button></div>
+    <div class="mbody" id="prevBody"></div>
+  </div>
+</div>
+<div id="ntf" class="ntf hidden"></div>
+
+<script>
+// ── SNOW ──────────────────────────────────────────────────────────────────────
+(function(){
+  const c=document.getElementById('snow'),x=c.getContext('2d');
+  let W,H;
+  const rsz=()=>{c.width=W=window.innerWidth;c.height=H=window.innerHeight;};
+  rsz();window.addEventListener('resize',rsz);
+  const fl=Array.from({length:140},()=>({
+    x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,
+    r:Math.random()*2.2+0.4,v:Math.random()*1.1+0.25,
+    w:Math.random()*.35-.175,op:Math.random()*.45+.1,
+    wb:Math.random()*Math.PI*2,ws:Math.random()*.03+.008
+  }));
+  (function loop(){
+    x.clearRect(0,0,W,H);
+    fl.forEach(f=>{
+      f.wb+=f.ws;f.y+=f.v;f.x+=f.w+Math.sin(f.wb)*.25;
+      if(f.y>H+4){f.y=-4;f.x=Math.random()*W;}
+      if(f.x>W+4)f.x=-4;if(f.x<-4)f.x=W+4;
+      x.beginPath();x.arc(f.x,f.y,f.r,0,Math.PI*2);
+      x.fillStyle=`rgba(200,230,255,${f.op})`;x.fill();
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+// ── PARTICLES ─────────────────────────────────────────────────────────────────
+(function(){
+  const cols=['#00e5ff','#ff3cac','#7b61ff','#00ff88','#ffd700'];
+  for(let i=0;i<20;i++){
+    const el=document.createElement('div');el.className='fp';
+    const s=Math.random()*5+2,dur=Math.random()*20+14,delay=Math.random()*-22,left=Math.random()*100;
+    const col=cols[i%cols.length];
+    el.style.cssText=`width:${s}px;height:${s}px;left:${left}vw;background:${col};opacity:${Math.random()*.2+.04};animation-duration:${dur}s;animation-delay:${delay}s;box-shadow:0 0 ${s*3}px ${col};`;
+    document.body.appendChild(el);
+  }
+})();
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const SA = 'psychokaratel'; // superadmin TG username
+let cu = null, cf = 'all', b64 = null;
+let localCat = [], localApps = [], localUsers = [];
+
+// ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
+function withDB(fn) {
+  if (window._firebaseReady) { fn(window._db, window._fs); }
+  else { document.addEventListener('firebaseReady', () => fn(window._db, window._fs), {once:true}); }
+}
+
+// ── FIRESTORE CRUD ────────────────────────────────────────────────────────────
+async function fsGetAll(col) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try {
+      const snap = await fs.getDocs(fs.collection(db, col));
+      resolve(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    } catch(e) { console.error('fsGetAll', e); resolve([]); }
+  }));
+}
+
+async function fsSet(col, id, data) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try { await fs.setDoc(fs.doc(db, col, id), data); resolve(true); }
+    catch(e) { console.error('fsSet', e); resolve(false); }
+  }));
+}
+
+async function fsAdd(col, data) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try { const ref = await fs.addDoc(fs.collection(db, col), data); resolve(ref.id); }
+    catch(e) { console.error('fsAdd', e); resolve(null); }
+  }));
+}
+
+async function fsUpdate(col, id, data) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try { await fs.updateDoc(fs.doc(db, col, id), data); resolve(true); }
+    catch(e) { console.error('fsUpdate', e); resolve(false); }
+  }));
+}
+
+async function fsDel(col, id) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try { await fs.deleteDoc(fs.doc(db, col, id)); resolve(true); }
+    catch(e) { console.error('fsDel', e); resolve(false); }
+  }));
+}
+
+// ── TOKEN LOOKUP ──────────────────────────────────────────────────────────────
+// Reads a single token doc from the 'tokens' collection
+async function fsGetToken(token) {
+  return new Promise(resolve => withDB(async (db, fs) => {
+    try {
+      const docSnap = await fs.getDoc(fs.doc(db, 'tokens', token));
+      if (docSnap.exists()) {
+        resolve({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        resolve(null);
+      }
+    } catch(e) { console.error('fsGetToken', e); resolve(null); }
+  }));
+}
+
+// ── SEED DEFAULT DATA (first run only) ────────────────────────────────────────
+async function seedIfEmpty() {
+  const existing = await fsGetAll('catalog');
+  if (existing.length > 0) return;
+  const defaults = [
+    {name:'Дружелюбный',un:'druzhelyubny',cat:'Медийка',tags:['не в км'],desc:'Дружелюбный начал путь в конце 2023 года. Известен активностью и добрым характером.',av:null,em:'😊',ch:'',pin:true},
+    {name:'Онегин',un:'onegin_tg',cat:'Медийка',tags:[],desc:'Онегин пришёл в комьюнити в 2021 году. Один из первых участников сообщества.',av:null,em:'🎭',ch:'onegin_official',pin:true},
+    {name:'CryptoKing',un:'cryptoking',cat:'Гарант',tags:['гарант'],desc:'Проверенный гарант с опытом 2+ лет. Сотни успешных сделок.',av:null,em:'👑',ch:'cryptoking_ch',pin:false},
+    {name:'PixelMaster',un:'pixelmaster',cat:'Дизайнер',tags:['стример'],desc:'Профессиональный дизайнер, специализируется на брендинге Telegram-каналов.',av:null,em:'🎨',ch:'',pin:false},
+    {name:'CodeZero',un:'codezero',cat:'Кодер',tags:[],desc:'Full-stack разработчик, создаёт ботов и веб-приложения для Telegram.',av:null,em:'💻',ch:'codezero_dev',pin:false}
+  ];
+  for (const item of defaults) await fsAdd('catalog', item);
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('cGrid').innerHTML = `<div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>`;
+  await seedIfEmpty();
+  [localCat, localApps, localUsers] = await Promise.all([
+    fsGetAll('catalog'), fsGetAll('apps'), fsGetAll('users')
+  ]);
+  renderCards();
+  updStats();
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.style.display='none');document.getElementById(id).style.display='block';window.scrollTo(0,0);}
+function goHome(){showPage('mainPage');renderCards();updateNav();}
+function showAuth(){showPage('authPage');}
+function scrollCat(){document.getElementById('catSect').scrollIntoView({behavior:'smooth'});}
+
+// TOKEN-BASED LOGIN
+async function doLoginToken() {
+  const token = (document.getElementById('tokenInput').value||'').trim();
+  if (!token) { notify('Вставьте токен из бота!', 'err'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = '⏳ Проверяем...';
+  btn.disabled = true;
+
+  // 1. Fetch token doc from Firestore
+  const td = await fsGetToken(token);
+
+  if (!td) {
+    notify('❌ Токен не найден. Получите новый в боте.', 'err');
+    btn.textContent = '🔐 Войти по токену'; btn.disabled = false;
+    return;
+  }
+  if (td.used) {
+    notify('❌ Токен уже использован. Получите новый /token', 'err');
+    btn.textContent = '🔐 Войти по токену'; btn.disabled = false;
+    return;
+  }
+
+  // 2. Check expiry (10 minutes)
+  const created = td.createdAt ? (td.createdAt.toMillis ? td.createdAt.toMillis() : Number(td.createdAt)) : 0;
+  if (created && (Date.now() - created > 10 * 60 * 1000)) {
+    notify('⏰ Токен истёк. Получите новый командой /token', 'err');
+    btn.textContent = '🔐 Войти по токену'; btn.disabled = false;
+    return;
+  }
+
+  // 3. Mark token as used
+  await fsUpdate('tokens', token, { used: true });
+
+  // 4. Find or create user
+  const tgId = String(td.tgId || '');
+  const un = (td.username || '').toLowerCase().replace('@','') || tgId;
+  const name = td.name || un;
+
+  let u = localUsers.find(x => x.tgId === tgId || (un && x.un === un));
+  if (!u) {
+    const role = (un === SA) ? 'admin' : 'user';
+    const data = { un, name, role, joined: new Date().toISOString().split('T')[0], av: null, tgId };
+    const newId = await fsAdd('users', data);
+    u = { id: newId, ...data };
+    localUsers.push(u);
+  } else {
+    // Ensure superadmin has correct role
+    if (un === SA && u.role !== 'admin') {
+      u.role = 'admin';
+      await fsUpdate('users', u.id, { role: 'admin' });
+    }
+    // Sync name
+    if (u.name !== name) {
+      u.name = name;
+      await fsUpdate('users', u.id, { name });
+    }
+  }
+
+  cu = u;
+  document.getElementById('tokenInput').value = '';
+  btn.textContent = '🔐 Войти по токену'; btn.disabled = false;
+  updateNav();
+  goHome();
+  notify('👋 Добро пожаловать, ' + name + '!', 'ok');
+}
+
+function logout(){ cu = null; updateNav(); goHome(); notify('Вы вышли из аккаунта','ok'); }
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+const tgSVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>`;
+
+function updateNav() {
+  const nr = document.getElementById('navR'), ha = document.getElementById('heroActs');
+  updStats();
+  if (cu) {
+    const rl = cu.role, rn = rl==='admin'?'Админ':rl==='moder'?'Модер':'User';
+    const avH = cu.av ? `<img src="${cu.av}" alt="">` : (cu.name.charAt(0).toUpperCase());
+    nr.innerHTML = `<div class="ub"><div class="uav">${avH}</div><span>${cu.name}</span><span class="rb r${rl}">${rn}</span></div>
+      ${(rl==='admin'||rl==='moder')?`<button class="btn bgh bsm" onclick="showAdmin()">⚙️ Панель</button>`:''}
+      <button class="btn bgh bsm" onclick="showAppPage()">📝 Заявка</button>
+      <button class="btn bdn bsm" onclick="logout()">Выйти</button>`;
+    ha.innerHTML = `<button class="btn bpr blg" onclick="showAppPage()">📝 Подать заявку</button>
+      <button class="btn bgh blg" onclick="scrollCat()">Смотреть каталог</button>
+      ${(rl==='admin'||rl==='moder')?`<button class="btn bgr blg" onclick="showAdmin()">⚙️ Панель модерации</button>`:''}`;
+  } else {
+    nr.innerHTML = `<button class="btn btg bsm" onclick="showAuth()">${tgSVG} Войти</button>`;
+    ha.innerHTML = `<button class="btn btg blg" onclick="showAuth()">${tgSVG} Войти через Telegram</button>
+      <button class="btn bgh blg" onclick="scrollCat()">Смотреть каталог</button>`;
+  }
+}
+
+function updStats() {
+  document.getElementById('tc').textContent = localCat.length;
+  document.getElementById('pc').textContent = localApps.filter(a => a.st === 'pending').length;
+}
+
+// ── CATALOG RENDER ────────────────────────────────────────────────────────────
+function renderCards(items) {
+  const g = document.getElementById('cGrid'), data = items || localCat;
+  if (!data.length) {
+    g.innerHTML = `<div class="empty" style="grid-column:1/-1;"><div class="ei">🔍</div><h3>Ничего не найдено</h3><p>Измените поиск или фильтр</p></div>`;
+    return;
+  }
+  g.innerHTML = data.map((it,i) => `<div class="card" style="animation-delay:${i*.06}s;" onclick="showProf('${it.id}')">
+    <div class="cth">${it.av?`<img src="${it.av}" alt="${it.name}">`:`<div class="cte">${it.em}</div>`}
+      <div class="cbdg">
+        ${it.pin?'<span class="tag tpin">📌 закреп</span>':''}
+        ${(it.tags||[]).includes('гарант')?'<span class="tag tgar">✅ гарант</span>':''}
+        ${(it.tags||[]).includes('не в км')?'<span class="tag tscam">❌ не в км</span>':''}
+      </div>
+    </div>
+    <div class="cbody">
+      <div class="cname">${it.name}</div>
+      <div class="ctrow"><span class="tag tcat">${it.cat}</span>${(it.tags||[]).filter(t=>t!=='гарант'&&t!=='не в км').map(t=>`<span class="tag tmic">${t}</span>`).join('')}</div>
+      <div class="cdesc">${it.desc}</div>
+    </div>
+  </div>`).join('');
+}
+
+function filterCards() {
+  const s = document.getElementById('srch').value.toLowerCase();
+  let d = localCat;
+  if (cf !== 'all') d = d.filter(i => i.cat === cf);
+  if (s) d = d.filter(i => i.name.toLowerCase().includes(s)||i.desc.toLowerCase().includes(s)||(i.un||'').toLowerCase().includes(s));
+  renderCards(d);
+}
+function setF(f,el){ cf=f; document.querySelectorAll('.fc').forEach(c=>c.classList.remove('on')); el.classList.add('on'); filterCards(); }
+
+function showProf(id) {
+  const it = localCat.find(i => i.id === id); if (!it) return;
+  const av = it.av ? `<img src="${it.av}" alt="">` : `<span style="font-size:44px;">${it.em}</span>`;
+  document.getElementById('profBody').innerHTML = `
+    <div class="dhd"><div class="dav">${av}</div><div><div class="dn">${it.name}</div><div class="du">@${it.un}</div>
+      <div class="dt"><span class="tag tcat">${it.cat}</span>${(it.tags||[]).map(t=>`<span class="tag tmic">${t}</span>`).join('')}${it.pin?'<span class="tag tpin">📌</span>':''}</div></div></div>
+    <p style="color:var(--m);font-size:14px;line-height:1.7;margin-bottom:20px;">${it.desc}</p>
+    ${it.ch?`<a href="https://t.me/${it.ch}" target="_blank" class="btn btg bfl">${tgSVG} Перейти в канал</a>`:''}`;
+  oOv('profOv');
+}
+
+// ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
+function handleAv(inp) {
+  if (!inp.files||!inp.files[0]) return;
+  const f = inp.files[0];
+  if (f.size > 6*1024*1024) { notify('Файл слишком большой! Макс 6 МБ','err'); return; }
+  const rd = new FileReader();
+  rd.onload = e => {
+    b64 = e.target.result;
+    document.getElementById('avP').innerHTML = `<img src="${b64}" alt="avatar">`;
+    document.getElementById('avSt').textContent = '✅ Фото загружено!';
+  };
+  rd.onerror = () => notify('Ошибка чтения файла!','err');
+  rd.readAsDataURL(f);
+}
+
+// ── APPLICATION ───────────────────────────────────────────────────────────────
+function showAppPage() {
+  if (!cu) { showAuth(); return; }
+  document.getElementById('aUN').value = cu.un;
+  document.getElementById('aN').value = cu.name;
+  b64 = null;
+  document.getElementById('avP').innerHTML = '<span id="avIco">🖼️</span>';
+  document.getElementById('avSt').textContent = '';
+  showPage('appPage');
+}
+
+function togT(el) { el.classList.toggle('on'); }
+function getTags() { return [...document.querySelectorAll('.tt.on')].map(t => t.dataset.tag); }
+
+function prevApp() {
+  const name = document.getElementById('aN').value.trim();
+  const un = document.getElementById('aUN').value.trim().replace('@','');
+  const cat = document.getElementById('aCat').value;
+  const desc = document.getElementById('aDesc').value.trim();
+  if (!name||!un||!cat||!desc) { notify('Заполните все обязательные поля!','err'); return; }
+  const tags = getTags();
+  const av = b64 ? `<img src="${b64}" alt="">` : `<span style="font-size:44px;">🙂</span>`;
+  document.getElementById('prevBody').innerHTML = `
+    <div class="dhd"><div class="dav">${av}</div><div><div class="dn">${name}</div><div class="du">@${un}</div>
+      <div class="dt"><span class="tag tcat">${cat}</span>${tags.map(t=>`<span class="tag tmic">${t}</span>`).join('')}</div></div></div>
+    <p style="color:var(--m);font-size:14px;line-height:1.7;">${desc}</p>`;
+  oOv('prevOv');
+}
+
+async function submitApp() {
+  if (!cu) { showAuth(); return; }
+  const name = document.getElementById('aN').value.trim();
+  const un = document.getElementById('aUN').value.trim().replace('@','');
+  const cat = document.getElementById('aCat').value;
+  const desc = document.getElementById('aDesc').value.trim();
+  const ch = document.getElementById('aCh').value.trim();
+  if (!name||!un||!cat||!desc) { notify('Заполните все обязательные поля!','err'); return; }
+
+  notify('⏳ Отправляем...','ok');
+  const data = {
+    uid: cu.id, un: cu.un, name, aun: un, cat,
+    tags: getTags(), desc, av: b64, em: '🙂', ch,
+    st: 'pending', dt: new Date().toISOString().split('T')[0], isN: true
+  };
+  const newId = await fsAdd('apps', data);
+  if (!newId) { notify('Ошибка сохранения заявки!','err'); return; }
+  localApps.push({ id: newId, ...data });
+  ['aN','aDesc','aCh'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('aCat').value = '';
+  document.getElementById('dcc').textContent = '0';
+  document.querySelectorAll('.tt.on').forEach(t => t.classList.remove('on'));
+  b64 = null;
+  document.getElementById('avP').innerHTML = '<span id="avIco">🖼️</span>';
+  document.getElementById('avSt').textContent = '';
+  updStats();
+  notify('✅ Заявка отправлена! Ожидайте решения модераторов.','ok');
+}
+
+function showMyApps() {
+  if (!cu) return;
+  const my = localApps.filter(a => a.uid === cu.id);
+  const body = document.getElementById('myAppsB');
+  if (!my.length) {
+    body.innerHTML = `<div class="empty"><div class="ei">📭</div><h3>Заявок нет</h3><p>Вы ещё не подавали заявки</p></div>`;
+  } else {
+    body.innerHTML = my.map(a => `<div class="ai2" style="margin-bottom:10px;">
+      <div class="aav">${a.av?`<img src="${a.av}" alt="">`:a.em}</div>
+      <div class="ainf"><div class="an">${a.name}</div>
+        <div class="am"><span>@${a.aun}</span><span>${a.cat}</span><span>${a.dt}</span></div>
+        <span class="sb ${stCls(a.st)}">${stTx(a.st)}</span>
+      </div></div>`).join('');
+  }
+  oOv('myAppsOv');
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+function showAdmin() {
+  if (!cu||(cu.role!=='admin'&&cu.role!=='moder')) { notify('Нет доступа!','err'); return; }
+  if (cu.role==='admin') document.getElementById('sModers').classList.remove('hidden');
+  showPage('adminPage');
+  aTab('apps', document.getElementById('sApps'));
+}
+
+function aTab(tab, el) {
+  document.querySelectorAll('.ai').forEach(s => s.classList.remove('on')); el.classList.add('on');
+  ['tApps','tCat','tUsers','tModers'].forEach(t => document.getElementById(t).style.display='none');
+  if (tab==='apps') { document.getElementById('tApps').style.display='block'; renderAdmStats(); renderAdmApps('pending'); }
+  if (tab==='cat')  { document.getElementById('tCat').style.display='block';  renderAdmCat(); }
+  if (tab==='users'){ document.getElementById('tUsers').style.display='block'; renderUsers(); }
+  if (tab==='moders'){ document.getElementById('tModers').style.display='block'; renderMods(); }
+}
+
+function renderAdmStats() {
+  const p = localApps.filter(a => a.st==='pending').length;
+  document.getElementById('appCt').textContent = p;
+  document.getElementById('admStats').innerHTML = `
+    <div class="sc sc1"><div class="scl">В каталоге</div><div class="scn">${localCat.length}</div></div>
+    <div class="sc sc3"><div class="scl">Ожидают</div><div class="scn">${p}</div></div>
+    <div class="sc sc4"><div class="scl">Одобрено</div><div class="scn">${localApps.filter(a=>a.st==='approved').length}</div></div>
+    <div class="sc sc2"><div class="scl">Пользователей</div><div class="scn">${localUsers.length}</div></div>`;
+}
+
+function renderAdmApps(sf) {
+  renderAdmStats();
+  const list = document.getElementById('admList');
+  const apps = sf==='all' ? localApps : localApps.filter(a => a.st===sf);
+  if (!apps.length) { list.innerHTML = `<div class="empty"><div class="ei">📭</div><h3>Заявок нет</h3></div>`; return; }
+  list.innerHTML = apps.map(a => `<div class="ai2${a.isN&&a.st==='pending'?' isn':''}">
+    <div class="aav" style="position:relative;">${a.av?`<img src="${a.av}" alt="">`:a.em}${a.isN&&a.st==='pending'?'<div class="nd"></div>':''}</div>
+    <div class="ainf">
+      <div class="an">${a.name}</div>
+      <div class="am"><span>TG: @${a.un}</span><span>@${a.aun}</span><span>${a.cat}</span><span>${a.dt}</span></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+        <span class="sb ${stCls(a.st)}">${stTx(a.st)}</span>${(a.tags||[]).map(t=>`<span class="tag tmic">${t}</span>`).join('')}
+      </div>
+      <div class="ad">${a.desc}</div>
+      ${a.ch?`<div style="margin-top:6px;font-size:12px;color:var(--a);">📢 t.me/${a.ch}</div>`:''}
+    </div>
+    ${a.st==='pending'?`<div class="aac"><button class="btn bpr bsm" onclick="appApprove('${a.id}')">✅</button><button class="btn bdn bsm" onclick="appReject('${a.id}')">❌</button></div>`:''}
+  </div>`).join('');
+}
+
+async function appApprove(id) {
+  const a = localApps.find(x => x.id===id); if (!a) return;
+  await fsUpdate('apps', id, { st:'approved', isN:false });
+  a.st = 'approved'; a.isN = false;
+  const catData = { name:a.name, un:a.aun, cat:a.cat, tags:a.tags||[], desc:a.desc, av:a.av, em:a.em, ch:a.ch, pin:false };
+  const newId = await fsAdd('catalog', catData);
+  localCat.push({ id: newId, ...catData });
+  renderAdmApps('pending'); updStats();
+  notify('✅ @'+a.un+' одобрен и добавлен в каталог!','ok');
+}
+
+async function appReject(id) {
+  const a = localApps.find(x => x.id===id); if (!a) return;
+  await fsUpdate('apps', id, { st:'rejected', isN:false });
+  a.st = 'rejected'; a.isN = false;
+  renderAdmApps('pending');
+  notify('❌ Заявка @'+a.un+' отклонена.','err');
+}
+
+function renderAdmCat() {
+  const g = document.getElementById('admCat');
+  g.innerHTML = localCat.map(it => `<div class="card">
+    <div class="cth">${it.av?`<img src="${it.av}" alt="${it.name}">`:`<div class="cte">${it.em}</div>`}
+      <div class="cbdg">${it.pin?'<span class="tag tpin">📌</span>':''}</div>
+    </div>
+    <div class="cbody">
+      <div class="cname">${it.name}</div>
+      <div class="ctrow"><span class="tag tcat">${it.cat}</span></div>
+      <div class="cdesc" style="margin-bottom:12px;">${it.desc}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn bgh bsm" onclick="togPin('${it.id}')">${it.pin?'📌 Открепить':'📌 Закрепить'}</button>
+        <button class="btn bdn bsm" onclick="delCat('${it.id}')">🗑 Удалить</button>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+async function togPin(id) {
+  const it = localCat.find(x => x.id===id); if (!it) return;
+  it.pin = !it.pin;
+  await fsUpdate('catalog', id, { pin: it.pin });
+  renderAdmCat();
+}
+
+async function delCat(id) {
+  await fsDel('catalog', id);
+  localCat = localCat.filter(i => i.id !== id);
+  renderAdmCat(); updStats();
+  notify('🗑 Удалён из каталога','err');
+}
+
+function renderUsers() {
+  const t = document.getElementById('usrTab');
+  t.innerHTML = `<div class="ur uh"><div></div><div>Пользователь</div><div class="cr">Роль</div><div class="cd">Дата</div><div>Действия</div></div>` +
+    localUsers.map(u => `<div class="ur">
+      <div class="uav2">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div>
+      <div><div style="font-weight:500;">${u.name}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div>
+      <div class="cr"><span class="rb r${u.role}">${u.role}</span></div>
+      <div class="cd" style="font-size:12px;color:var(--m);">${u.joined}</div>
+      <div>${cu&&cu.role==='admin'&&u.id!==cu.id&&u.role!=='admin'
+        ?(u.role!=='moder'
+          ?`<button class="btn bgh bsm" onclick="mkMod('${u.id}','${u.un}')">→ Модер</button>`
+          :`<button class="btn bdn bsm" onclick="rmMod('${u.id}','${u.un}')">Снять</button>`)
+        :'<span style="color:var(--m);font-size:12px;">—</span>'}</div>
+    </div>`).join('');
+}
+
+function renderMods() {
+  const moders = localUsers.filter(u => u.role==='moder'||u.role==='admin');
+  const t = document.getElementById('modTab');
+  t.innerHTML = `<div class="ur uh"><div></div><div>Пользователь</div><div>Роль</div><div class="cd">С</div><div>Действия</div></div>` +
+    moders.map(u => `<div class="ur">
+      <div class="uav2">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div>
+      <div><div style="font-weight:500;">${u.name}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div>
+      <div><span class="rb r${u.role}">${u.role}</span></div>
+      <div class="cd" style="font-size:12px;color:var(--m);">${u.joined}</div>
+      <div>${u.role==='moder'
+        ?`<button class="btn bdn bsm" onclick="rmMod('${u.id}','${u.un}')">Снять</button>`
+        :`<span style="color:var(--gold);font-size:12px;">👑 Главный</span>`}</div>
+    </div>`).join('');
+}
+
+async function assignMod() {
+  const v = document.getElementById('modInp').value.trim().replace('@','').toLowerCase();
+  if (!v) { notify('Введите username!','err'); return; }
+  let u = localUsers.find(x => x.un===v);
+  if (!u) {
+    const data = { un:v, name:v, role:'moder', joined:new Date().toISOString().split('T')[0], av:null };
+    const newId = await fsAdd('users', data);
+    u = { id: newId, ...data };
+    localUsers.push(u);
+  } else {
+    if (u.role==='admin') { notify('Нельзя изменить роль администратора!','err'); return; }
+    u.role = 'moder';
+    await fsUpdate('users', u.id, { role:'moder' });
+  }
+  document.getElementById('modInp').value = '';
+  renderMods();
+  notify('✅ @'+v+' назначен модератором!','ok');
+}
+
+async function mkMod(id, un) {
+  const u = localUsers.find(x => x.id===id); if (!u) return;
+  u.role = 'moder';
+  await fsUpdate('users', id, { role:'moder' });
+  renderUsers();
+  notify('✅ @'+un+' теперь модератор','ok');
+}
+
+async function rmMod(id, un) {
+  const u = localUsers.find(x => x.id===id); if (!u) return;
+  u.role = 'user';
+  await fsUpdate('users', id, { role:'user' });
+  renderUsers(); renderMods();
+  notify('@'+un+' снят с должности','err');
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function oOv(id){ document.getElementById(id).classList.remove('hidden'); document.body.style.overflow='hidden'; }
+function cOvId(id){ document.getElementById(id).classList.add('hidden'); document.body.style.overflow=''; }
+function cOv(e,id){ if(e.target===document.getElementById(id)) cOvId(id); }
+
+// ── NOTIFY ────────────────────────────────────────────────────────────────────
+let ntT = null;
+function notify(msg, type) {
+  const el = document.getElementById('ntf');
+  el.textContent = msg; el.className = 'ntf '+(type||'ok'); el.classList.remove('hidden');
+  if (ntT) clearTimeout(ntT);
+  ntT = setTimeout(() => el.classList.add('hidden'), 4500);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function stCls(s){ return s==='pending'?'sbp':s==='approved'?'sba':'sbr'; }
+function stTx(s){ return s==='pending'?'⏳ Ожидает':s==='approved'?'✅ Одобрена':'❌ Отклонена'; }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+updateNav();
+withDB(() => loadData());
+</script>
+</body>
+  </html>
