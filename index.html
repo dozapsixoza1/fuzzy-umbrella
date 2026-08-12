@@ -1448,7 +1448,7 @@ async function showProf(id){
   oOv('profOv');
 }
 
-// ── COMMENTS ─────────────────────────────────────────────────────────────────
+  // ── COMMENTS ─────────────────────────────────────────────────────────────────
 function renderCommentsHtml(comments,catId){
   const roots=comments.filter(c=>!c.parentId).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const replies=comments.filter(c=>c.parentId);
@@ -1593,7 +1593,7 @@ async function showUserProfile(userId){
     </div>`:''}`;
 }
 
-  // ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
+// ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
 function handleAv(inp){
   if(!inp.files||!inp.files[0])return;const f=inp.files[0];
   if(f.size>6*1024*1024){notify('Файл слишком большой! Макс 6 МБ','err');return;}
@@ -2150,14 +2150,30 @@ if(window._firebaseReady){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js"></script>
 <script>
   function parseEmoji(){
-    if(typeof twemoji==='undefined')return; // CDN недоступен (например, локальный просмотр файла) — просто пропускаем
+    if(typeof twemoji==='undefined'){
+      showDebugBadge('❌ twemoji НЕ загрузился');
+      return;
+    }
     try{
       twemoji.parse(document.body, {
         folder: 'svg',
         ext: '.svg',
         className: 'twemoji'
       });
-    }catch(e){console.warn('twemoji parse failed',e);}
+      showDebugBadge('✅ twemoji работает');
+    }catch(e){
+      showDebugBadge('⚠️ twemoji ошибка: '+e.message);
+    }
+  }
+  function showDebugBadge(text){
+    let b=document.getElementById('emojiDebugBadge');
+    if(!b){
+      b=document.createElement('div');
+      b.id='emojiDebugBadge';
+      b.style.cssText='position:fixed;bottom:8px;left:8px;z-index:99999;background:#000;color:#0f0;padding:6px 10px;font-size:11px;border-radius:6px;font-family:monospace;';
+      document.body.appendChild(b);
+    }
+    b.textContent=text;
   }
   parseEmoji();
   let emojiDebounce=null;
