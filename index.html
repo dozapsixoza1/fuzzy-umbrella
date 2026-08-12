@@ -275,8 +275,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 .sig-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;
   border-radius:8px;font-size:11px;font-weight:600;margin:3px 3px 0 0;}
 .sig-karatel{background:linear-gradient(135deg,rgba(255,60,172,.12),rgba(123,97,255,.12));border:1px solid rgba(255,60,172,.3);color:#ff3cac;}
-.sig-andrey{background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(123,97,255,.1));border:1px solid rgba(0,229,255,.25);color:var(--a);}
-.sig-hani{background:linear-gradient(135deg,rgba(255,128,171,.1),rgba(255,64,129,.1));border:1px solid rgba(255,128,171,.3);color:#ff80ab;}
+.sig-deza{background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(123,97,255,.1));border:1px solid rgba(0,229,255,.25);color:var(--a);}
 .sig-media{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);color:var(--gold);}
 
 /* ── THEME SWITCHER ─── */
@@ -1155,15 +1154,13 @@ const SHOP_ITEMS=[
   {id:'premium',name:'Премиум аккаунт',desc:'Золотое свечение карточки, ⭐ значок в чате, анимированный бейдж.',price:1000,icon:'⭐',rarity:'epic'},
   {id:'anim_card',name:'Анимированная карточка',desc:'Пульсирующая подсветка вашей карточки в каталоге.',price:300,icon:'✨',rarity:'uncommon'},
   {id:'sig_karatel',name:'Роспись от Карателя',desc:'Эксклюзивная роспись от Карателя на вашем профиле.',price:200,icon:'✍️',rarity:'rare'},
-  {id:'sig_andrey',name:'Роспись Андрея Немцева',desc:'Подпись от Андрея Немцева.',price:200,icon:'📝',rarity:'rare'},
-  {id:'sig_hani',name:'Роспись от Хани',desc:'Изящная роспись от Хани.',price:200,icon:'🌸',rarity:'rare'},
+  {id:'sig_deza',name:'Роспись от Deza',desc:'Эксклюзивная роспись от Deza на вашем профиле.',price:200,icon:'🖋️',rarity:'rare'},
   {id:'sig_media',name:'Роспись от медиек',desc:'Специальная роспись от топ медиек Fame List.',price:150,icon:'🎙️',rarity:'uncommon'},
 ];
 const RAR_LABELS={common:'обычное',uncommon:'необычное',rare:'редкое',epic:'эпическое'};
 const SIG_STYLES={
   sig_karatel:{label:'✍️ Роспись Карателя',cls:'sig-karatel'},
-  sig_andrey:{label:'📝 Роспись Андрея Немцева',cls:'sig-andrey'},
-  sig_hani:{label:'🌸 Роспись Хани',cls:'sig-hani'},
+  sig_deza:{label:'🖋️ Роспись от Deza',cls:'sig-deza'},
   sig_media:{label:'🎙️ Роспись медиек',cls:'sig-media'},
 };
 
@@ -1384,7 +1381,7 @@ function filterCards(){
 }
 function setF(f,el){cf=f;document.querySelectorAll('.fc').forEach(c=>c.classList.remove('on'));el.classList.add('on');filterCards();}
 
-  // ── REACTIONS ─────────────────────────────────────────────────────────────────
+// ── REACTIONS ─────────────────────────────────────────────────────────────────
 async function doReact(catId,emoji){
   if(!cu){notify('Войдите, чтобы ставить реакции!','err');return;}
   const it=localCat.find(x=>x.id===catId);if(!it)return;
@@ -1450,7 +1447,7 @@ async function showProf(id){
   oOv('profOv');
 }
 
-// ── COMMENTS ─────────────────────────────────────────────────────────────────
+  // ── COMMENTS ─────────────────────────────────────────────────────────────────
 function renderCommentsHtml(comments,catId){
   const roots=comments.filter(c=>!c.parentId).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const replies=comments.filter(c=>c.parentId);
