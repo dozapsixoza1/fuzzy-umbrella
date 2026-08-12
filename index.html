@@ -384,6 +384,52 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 .pgsub{color:var(--m);font-size:14px;margin-bottom:28px;line-height:1.6;}
 .fcard{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:28px;}
 
+/* ── ФОРУМ ─── */
+.fcat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.fcat-card{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:22px;cursor:pointer;
+  transition:transform .2s,border-color .2s,box-shadow .2s;position:relative;overflow:hidden;}
+.fcat-card:hover{transform:translateY(-3px);border-color:var(--fcolor,var(--a3));box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.fcat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--fcolor,var(--a3));}
+.fcat-ic{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:14px;background:color-mix(in srgb,var(--fcolor,var(--a3)) 18%,transparent);color:var(--fcolor,var(--a3));}
+.fcat-name{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;margin-bottom:6px;}
+.fcat-desc{color:var(--m);font-size:13px;line-height:1.5;margin-bottom:14px;}
+.fcat-meta{display:flex;gap:14px;font-size:12px;color:var(--m);}
+.fcat-meta b{color:var(--t);}
+
+.ftopic-row{display:flex;align-items:center;gap:14px;background:var(--s);border:1px solid var(--b);
+  border-radius:14px;padding:16px 18px;margin-bottom:10px;cursor:pointer;transition:border-color .2s,transform .15s;}
+.ftopic-row:hover{border-color:var(--a3);transform:translateX(3px);}
+.ftopic-row.pinned{border-color:var(--gold);background:linear-gradient(90deg,rgba(255,215,0,.06),transparent);}
+.ftopic-av{width:40px;height:40px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:var(--s2);font-weight:700;overflow:hidden;font-size:16px;}
+.ftopic-av img{width:100%;height:100%;object-fit:cover;}
+.ftopic-body{flex:1;min-width:0;}
+.ftopic-title{font-weight:700;font-size:15px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ftopic-meta{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--m);flex-wrap:wrap;}
+.ftopic-stats{display:flex;gap:14px;font-size:12px;color:var(--m);flex-shrink:0;text-align:center;}
+.ftopic-stats div{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.ftopic-stats b{color:var(--t);font-size:14px;}
+
+.frank{font-size:9px;padding:2px 7px;border-radius:5px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.4px;background:color-mix(in srgb,var(--fcolor,var(--a)) 20%,transparent);
+  color:var(--fcolor,var(--a));border:1px solid color-mix(in srgb,var(--fcolor,var(--a)) 45%,transparent);}
+
+.freply{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:16px 18px;margin-bottom:10px;}
+.freply-hd{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.freply-av{width:32px;height:32px;border-radius:9px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;background:var(--s2);font-weight:700;font-size:13px;}
+.freply-av img{width:100%;height:100%;object-fit:cover;}
+.freply-name{font-weight:700;font-size:13.5px;}
+.freply-time{font-size:11px;color:var(--m);margin-left:auto;}
+.freply-body{font-size:14px;line-height:1.6;color:var(--t);white-space:pre-wrap;word-break:break-word;}
+
+.fcolor-dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.2);vertical-align:-2px;}
+.fcolor-pick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;}
+.fcolor-pick .fcolor-dot{width:26px;height:26px;cursor:pointer;transition:transform .15s;}
+.fcolor-pick .fcolor-dot:hover{transform:scale(1.15);}
+.fcolor-pick .fcolor-dot.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--t);}
+
 /* ── PROFILE PAGE ─── */
 .prof-page{max-width:700px;margin:0 auto;padding:40px 20px 100px;}
 .prof-header{background:var(--s);border:1px solid var(--b);border-radius:20px;overflow:hidden;margin-bottom:20px;}
@@ -798,6 +844,47 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   </div>
 </div>
 
+<!-- FORUM: категории -->
+<div class="page" id="forumPage" style="display:none;padding-top:64px;">
+  <div class="posts-page">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;">
+      <button class="btn bgh bsm" onclick="goHome()">🏠 TK Fame List</button>
+    </div>
+    <div class="pgtit">💬 Форум</div>
+    <div class="pgsub" style="margin-bottom:28px;">Обсуждения, вопросы и предложения сообщества</div>
+    <div id="forumCatGrid" class="fcat-grid"><div class="lder"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
+  </div>
+</div>
+
+<!-- FORUM: темы категории -->
+<div class="page" id="forumCatPage" style="display:none;padding-top:64px;">
+  <div class="posts-page">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;justify-content:space-between;">
+      <button class="btn bgh bsm" onclick="showForumPage()">← Разделы</button>
+      <button class="btn bpr bsm" id="fNewTopicBtn" onclick="openNewTopicModal()">➕ Новая тема</button>
+    </div>
+    <div class="pgtit" id="fCatTitle">Раздел</div>
+    <div class="pgsub" id="fCatDesc" style="margin-bottom:24px;"></div>
+    <div id="forumTopicsList"><div class="lder"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
+  </div>
+</div>
+
+<!-- FORUM: тема + ответы -->
+<div class="page" id="forumTopicPage" style="display:none;padding-top:64px;">
+  <div class="posts-page">
+    <button class="btn bgh bsm" onclick="backToForumCat()" style="margin-bottom:22px;">← Назад к теме раздела</button>
+    <div id="forumTopicBody"><div class="lder"><div class="ld"></div><div class="ld"></div></div></div>
+    <div id="forumRepliesList" style="margin-top:24px;"></div>
+    <div class="fcard" style="margin-top:20px;" id="forumReplyBox">
+      <div class="fg">
+        <label class="fl">Ваш ответ</label>
+        <textarea class="fi" id="forumReplyInp" rows="3" placeholder="Написать ответ в теме..."></textarea>
+      </div>
+      <button class="btn bpr" onclick="postForumReply()">Ответить</button>
+    </div>
+  </div>
+</div>
+
 <!-- CHAT PAGE -->
 <div class="page" id="chatPage" style="display:none;">
   <div class="chat-wrap">
@@ -915,6 +1002,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <div class="ai on" id="sApps" onclick="aTab('apps',this)">📋 Заявки <span class="act" id="appCt">0</span></div>
       <div class="ai" id="sCat" onclick="aTab('cat',this)">📚 Каталог</div>
       <div class="ai" id="sPosts" onclick="aTab('posts',this)">📰 Посты</div>
+      <div class="ai" id="sForum" onclick="aTab('forum',this)">💬 Форум</div>
       <div class="albl">Сообщество</div>
       <div class="ai" id="sUsers" onclick="aTab('users',this)">👥 Пользователи</div>
       <div class="ai" id="sDeputies" onclick="aTab('deputies',this)">🥇 Заместители</div>
@@ -942,6 +1030,32 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
         </div>
         <div class="posts-grid" id="admPostsGrid"></div>
       </div>
+      <div id="tForum" style="display:none;">
+        <div class="ahd"><div class="aptit">💬 Форум — разделы</div></div>
+        <div class="fcard" style="margin-bottom:20px;">
+          <div class="fg"><label class="fl">Название раздела</label><input class="fi" id="fcName" placeholder="Например: Общение"/></div>
+          <div style="display:flex;gap:10px;">
+            <div class="fg" style="flex:1;"><label class="fl">Иконка (эмодзи)</label><input class="fi" id="fcIcon" placeholder="💬" maxlength="4"/></div>
+            <div class="fg" style="flex:1;"><label class="fl">Цвет</label><input class="fi" id="fcColor" type="color" value="#7b61ff" style="height:44px;padding:4px;"/></div>
+          </div>
+          <div class="fg"><label class="fl">Описание</label><input class="fi" id="fcDesc" placeholder="Короткое описание раздела"/></div>
+          <button class="btn bpr" onclick="addForumCategory()">➕ Создать раздел</button>
+        </div>
+        <div class="fcat-grid" id="admForumCat"></div>
+
+        <div class="ahd" style="margin-top:32px;"><div class="aptit">🎨 Краски (ранги) участников</div></div>
+        <div class="fcard" style="margin-bottom:20px;">
+          <div style="font-size:13px;color:var(--m);margin-bottom:10px;">Выдать пользователю цветной ранг на форуме (по TG username, пользователь должен хотя бы раз войти на сайт):</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <div class="fpx" style="flex:1;min-width:140px;"><span class="fpxl">@</span><input class="fi" id="frInp" placeholder="username" style="flex:1;"/></div>
+            <input class="fi" id="frRank" placeholder="Название краски (напр. Куратор форума)" style="flex:1;min-width:180px;"/>
+          </div>
+          <div style="font-size:12px;color:var(--m);margin-bottom:4px;">Выберите цвет:</div>
+          <div class="fcolor-pick" id="fcColorPicker"></div>
+          <button class="btn bpr" onclick="assignForumRank()" style="margin-top:10px;">Выдать краску</button>
+        </div>
+        <div class="utab" id="forumRankTab"></div>
+      </div>
       <div id="tUsers" style="display:none;">
         <div class="ahd"><div class="aptit">👥 Пользователи</div></div>
         <div class="utab" id="usrTab"></div>
@@ -968,6 +1082,17 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
         </div>
         <div class="utab" id="modTab"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov hidden" id="newTopicOv" onclick="cOv(event,'newTopicOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">➕ Новая тема</div><button class="mx" onclick="cOvId('newTopicOv')">✕</button></div>
+    <div class="mbody">
+      <div class="fg"><label class="fl">Заголовок</label><input class="fi" id="ntTitle" maxlength="120" placeholder="О чём тема?"/></div>
+      <div class="fg"><label class="fl">Текст</label><textarea class="fi" id="ntBody" rows="6" placeholder="Опишите подробнее..."></textarea></div>
+      <button class="btn bpr" onclick="createForumTopic()" style="width:100%;">Создать тему</button>
     </div>
   </div>
 </div>
@@ -1155,7 +1280,8 @@ setTimeout(()=>{const ov=document.getElementById('welcomeOv');if(ov)closeWelcome
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const SA='psychokaratel';
 let cu=null,cf='all',b64=null,postImgB64=null;
-let localCat=[],localApps=[],localUsers=[],localPosts=[],localGiveaways=[];
+let localCat=[],localApps=[],localUsers=[],localPosts=[],localGiveaways=[],localForumCat=[];
+let curForumTopic=null,curForumCatId=null;
 let chatUnsubscribe=null;
 let notifications=[];
 const REACTIONS=['👍','❤️','🔥','😂','😮'];
@@ -1222,8 +1348,8 @@ async function fsQuery(col,field,op,val){return new Promise(r=>withDB(async(db,f
 // ── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadData(){
   document.getElementById('cGrid').innerHTML=`<div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>`;
-  [localCat,localApps,localUsers,localPosts,localGiveaways]=await Promise.all([
-    fsGetAll('catalog'),fsGetAll('apps'),fsGetAll('users'),fsGetAll('posts'),fsGetAll('giveaways')
+  [localCat,localApps,localUsers,localPosts,localGiveaways,localForumCat]=await Promise.all([
+    fsGetAll('catalog'),fsGetAll('apps'),fsGetAll('users'),fsGetAll('posts'),fsGetAll('giveaways'),fsGetAll('forumCategories')
   ]);
   renderCards();
   updStats();
@@ -1359,6 +1485,7 @@ function updateNav(){
     const unread=notifications.filter(n=>!n.read).length;
     nr.innerHTML=`
       <button class="btn bgh bsm" onclick="showPostsPage()">📰 Посты</button>
+      <button class="btn bgh bsm" onclick="showForumPage()">💬 Форум</button>
       <button class="btn bgh bsm" onclick="showChatPage()">💬 Чат</button>
       <button class="btn bgh bsm" onclick="showTopPage()">🏆 Топ</button>
       <button class="btn bgh bsm" onclick="showStaffPage()">👑 Staff</button>
@@ -1378,6 +1505,7 @@ function updateNav(){
   }else{
     nr.innerHTML=`
       <button class="btn bgh bsm" onclick="showPostsPage()">📰 Посты</button>
+      <button class="btn bgh bsm" onclick="showForumPage()">💬 Форум</button>
       <button class="btn bgh bsm" onclick="showStaffPage()">👑 Staff</button>
       <button class="btn btg bsm" onclick="showAuth()">${tgSVG} Войти</button>
       <button class="btn bgh bsm" onclick="openSettings()">🎨 Тема</button>`;
@@ -1631,6 +1759,7 @@ async function showUserProfile(userId){
           ${u.name}
           ${isVerif?`<span class="vico" title="Верифицирован">✓</span>`:''}
           ${u.role!=='user'?`<span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span>`:''}
+          ${forumBadge(u)}
         </div>
         <div class="prof-un">@${u.un}</div>
         <div class="prof-badges">
@@ -1960,10 +2089,16 @@ function renderChatMsg(msg,isMine){
 function showAdmin(){if(!isModer()){notify('Нет доступа!','err');return;}showPage('adminPage');aTab('apps',document.getElementById('sApps'));}
 function aTab(tab,el){
   document.querySelectorAll('.ai').forEach(s=>s.classList.remove('on'));el.classList.add('on');
-  ['tApps','tCat','tPosts','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
+  ['tApps','tCat','tPosts','tForum','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
   if(tab==='apps'){document.getElementById('tApps').style.display='block';renderAdmStats();renderAdmApps('pending');}
   if(tab==='cat'&&isDeputy()){document.getElementById('tCat').style.display='block';renderAdmCat();}
   if(tab==='posts'&&isDeputy()){document.getElementById('tPosts').style.display='block';renderAdmPosts();}
+  if(tab==='forum'&&isDeputy()){
+    document.getElementById('tForum').style.display='block';
+    document.getElementById('fcColorPicker').innerHTML=forumColorPicker();
+    if(!document.querySelector('#fcColorPicker .fcolor-dot.sel'))document.querySelector('#fcColorPicker .fcolor-dot')?.classList.add('sel');
+    renderForumCatAdmin();renderForumRanksAdmin();
+  }
   if(tab==='users'&&isAdmin()){document.getElementById('tUsers').style.display='block';renderUsers();}
   if(tab==='deputies'&&isAdmin()){document.getElementById('tDeputies').style.display='block';renderDeputies();}
   if(tab==='moders'&&isAdmin()){document.getElementById('tModers').style.display='block';renderMods();}
@@ -2185,6 +2320,244 @@ async function endGiveaway(id){
   oOv('giveWinnerOv');renderGiveaways();notify(`🏆 Победитель: ${winner.name}!`,'ok');
 }
 async function delGiveaway(id){await fsDel('giveaways',id);localGiveaways=localGiveaways.filter(x=>x.id!==id);renderGiveaways();notify('🗑 Удалён','err');}
+
+// ── ФОРУМ ────────────────────────────────────────────────────────────────────
+const FORUM_COLORS=['#00e5ff','#ff3cac','#7b61ff','#ffd700','#00ff88','#ff9500','#ff4455','#4a5c7a','#e040fb','#26c6da'];
+
+function forumBadge(u){
+  if(!u||!u.forumRank)return'';
+  return`<span class="frank" style="--fcolor:${u.forumColor||'var(--a)'};">${escHtml(u.forumRank)}</span>`;
+}
+function fUserAvHtml(u,cls){
+  if(!u)return`<div class="${cls}">?</div>`;
+  return u.av?`<div class="${cls}"><img src="${u.av}" alt=""></div>`:`<div class="${cls}">${(u.name||'?').charAt(0).toUpperCase()}</div>`;
+}
+function timeAgoF(ts){
+  const d=Date.now()-(ts||0);const m=Math.floor(d/60000);
+  if(m<1)return'только что';if(m<60)return m+' мин назад';
+  const h=Math.floor(m/60);if(h<24)return h+' ч назад';
+  const days=Math.floor(h/24);if(days<7)return days+' дн назад';
+  return new Date(ts).toLocaleDateString('ru',{day:'numeric',month:'short'});
+}
+
+function showForumPage(){if(!localForumCat.length)fsGetAll('forumCategories').then(c=>{localForumCat=c;renderForumCategories();});showPage('forumPage');updateNav();renderForumCategories();}
+function renderForumCategories(){
+  const g=document.getElementById('forumCatGrid');
+  if(!localForumCat.length){
+    g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="ei">💬</div><h3>Разделов пока нет</h3>${isDeputy()?'<p>Создайте раздел в админ-панели</p>':'<p>Загляните позже</p>'}</div>`;
+    return;
+  }
+  g.innerHTML=localForumCat.map(c=>`
+    <div class="fcat-card" style="--fcolor:${c.color||'#7b61ff'};" onclick="showForumCatPage('${c.id}')">
+      <div class="fcat-ic">${c.icon||'💬'}</div>
+      <div class="fcat-name">${escHtml(c.name)}</div>
+      <div class="fcat-desc">${escHtml(c.desc||'')}</div>
+      <div class="fcat-meta"><span><b>${c.topicsCount||0}</b> тем</span></div>
+    </div>`).join('');
+}
+
+async function showForumCatPage(catId){
+  curForumCatId=catId;
+  const cat=localForumCat.find(c=>c.id===catId);if(!cat)return;
+  showPage('forumCatPage');updateNav();
+  document.getElementById('fCatTitle').textContent=(cat.icon||'💬')+' '+cat.name;
+  document.getElementById('fCatDesc').textContent=cat.desc||'';
+  document.getElementById('fNewTopicBtn').style.display=cu?'inline-flex':'none';
+  const list=document.getElementById('forumTopicsList');
+  list.innerHTML=`<div class="lder"><div class="ld"></div><div class="ld"></div></div>`;
+  const topics=await fsQuery('forumTopics','catId','==',catId);
+  topics.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.ts||0)-(a.ts||0));
+  cat._topics=topics;
+  if(!topics.length){list.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>Тем пока нет</h3><p>${cu?'Создайте первую!':'Войдите, чтобы создать тему'}</p></div>`;return;}
+  list.innerHTML=topics.map(t=>{
+    const au=localUsers.find(u=>u.id===t.authorId);
+    return`<div class="ftopic-row${t.pinned?' pinned':''}" onclick="openForumTopic('${t.id}')">
+      ${fUserAvHtml(au,'ftopic-av')}
+      <div class="ftopic-body">
+        <div class="ftopic-title">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
+        <div class="ftopic-meta"><span>${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span></div>
+      </div>
+      <div class="ftopic-stats"><div><b>${t.repliesCount||0}</b>ответов</div></div>
+    </div>`;
+  }).join('');
+}
+
+async function openForumTopic(topicId){
+  showPage('forumTopicPage');updateNav();
+  const body=document.getElementById('forumTopicBody');
+  body.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const cat=localForumCat.find(c=>c.id===curForumCatId);
+  let t=cat?._topics?.find(x=>x.id===topicId);
+  if(!t){const all=await fsQuery('forumTopics','catId','==',curForumCatId||'');t=all.find(x=>x.id===topicId);}
+  if(!t){body.innerHTML=`<div class="empty"><div class="ei">😕</div><h3>Тема не найдена</h3></div>`;return;}
+  curForumTopic=t;
+  const au=localUsers.find(u=>u.id===t.authorId);
+  body.innerHTML=`
+    <div class="fcard">
+      <div class="ftopic-meta" style="margin-bottom:10px;">
+        <span style="font-weight:700;color:var(--t);">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span>
+      </div>
+      <div class="pgtit" style="font-size:22px;margin-bottom:12px;">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
+      <div class="freply-body">${escHtml(t.body)}</div>
+      ${isModer()?`<div style="display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;">
+        <button class="btn bgh bsm" onclick="toggleTopicPin('${t.id}')">${t.pinned?'📌 Открепить':'📌 Закрепить'}</button>
+        <button class="btn bgh bsm" onclick="toggleTopicLock('${t.id}')">${t.locked?'🔓 Открыть':'🔒 Закрыть'}</button>
+        <button class="btn bdn bsm" onclick="deleteForumTopic('${t.id}')">🗑 Удалить тему</button>
+      </div>`:''}
+    </div>`;
+  document.getElementById('forumReplyBox').style.display=(cu&&!t.locked)?'block':'none';
+  renderForumReplies(topicId);
+}
+async function renderForumReplies(topicId){
+  const list=document.getElementById('forumRepliesList');
+  list.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const replies=await fsQuery('forumReplies','topicId','==',topicId);
+  replies.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  curForumTopic._replies=replies;
+  if(!replies.length){list.innerHTML=`<div class="empty"><div class="ei">💬</div><h3>Ответов пока нет</h3></div>`;return;}
+  list.innerHTML=replies.map(r=>{
+    const au=localUsers.find(u=>u.id===r.authorId);
+    return`<div class="freply">
+      <div class="freply-hd">
+        ${fUserAvHtml(au,'freply-av')}
+        <span class="freply-name">${escHtml(r.authorName||'?')}</span>${forumBadge(au)}
+        <span class="freply-time">${timeAgoF(r.ts)}</span>
+        ${(isModer()||(cu&&r.authorId===cu.id))?`<button class="btn bdn bsm" style="padding:3px 8px;margin-left:6px;" onclick="deleteForumReply('${r.id}','${topicId}')">🗑</button>`:''}
+      </div>
+      <div class="freply-body">${escHtml(r.body)}</div>
+    </div>`;
+  }).join('');
+}
+function backToForumCat(){if(curForumCatId)showForumCatPage(curForumCatId);else showForumPage();}
+
+function openNewTopicModal(){
+  if(!cu){showAuth();return;}
+  document.getElementById('ntTitle').value='';document.getElementById('ntBody').value='';
+  oOv('newTopicOv');
+}
+async function createForumTopic(){
+  if(!cu){showAuth();return;}
+  const title=document.getElementById('ntTitle').value.trim();
+  const bodyText=document.getElementById('ntBody').value.trim();
+  if(!title||!bodyText){notify('Заполните заголовок и текст!','err');return;}
+  if(!curForumCatId){notify('Раздел не выбран','err');return;}
+  const data={catId:curForumCatId,title,body:bodyText,authorId:cu.id,authorName:cu.name,ts:Date.now(),pinned:false,locked:false,repliesCount:0};
+  const newId=await fsAdd('forumTopics',data);
+  if(!newId){notify('❌ Не удалось создать тему','err');return;}
+  cOvId('newTopicOv');notify('✅ Тема создана!','ok');
+  const cat=localForumCat.find(c=>c.id===curForumCatId);if(cat){cat.topicsCount=(cat.topicsCount||0)+1;fsUpdate('forumCategories',cat.id,{topicsCount:cat.topicsCount});}
+  showForumCatPage(curForumCatId);
+}
+async function postForumReply(){
+  if(!cu){showAuth();return;}
+  if(!curForumTopic){return;}
+  if(curForumTopic.locked){notify('🔒 Тема закрыта','err');return;}
+  const inp=document.getElementById('forumReplyInp');
+  const bodyText=inp.value.trim();
+  if(!bodyText){notify('Введите текст ответа!','err');return;}
+  const data={topicId:curForumTopic.id,body:bodyText,authorId:cu.id,authorName:cu.name,ts:Date.now()};
+  const newId=await fsAdd('forumReplies',data);
+  if(!newId){notify('❌ Не удалось отправить','err');return;}
+  inp.value='';
+  const newCount=(curForumTopic.repliesCount||0)+1;
+  curForumTopic.repliesCount=newCount;
+  await fsUpdate('forumTopics',curForumTopic.id,{repliesCount:newCount});
+  if(curForumTopic.authorId!==cu.id)addNotification(curForumTopic.authorId,`💬 ${cu.name} ответил(а) в теме "${curForumTopic.title}"`,'ok');
+  renderForumReplies(curForumTopic.id);
+  notify('✅ Ответ отправлен','ok');
+}
+async function toggleTopicPin(id){
+  const cat=localForumCat.find(c=>c.id===curForumCatId);const t=cat?._topics?.find(x=>x.id===id)||curForumTopic;
+  t.pinned=!t.pinned;await fsUpdate('forumTopics',id,{pinned:t.pinned});
+  notify(t.pinned?'📌 Закреплено':'📌 Откреплено','ok');openForumTopic(id);
+}
+async function toggleTopicLock(id){
+  const cat=localForumCat.find(c=>c.id===curForumCatId);const t=cat?._topics?.find(x=>x.id===id)||curForumTopic;
+  t.locked=!t.locked;await fsUpdate('forumTopics',id,{locked:t.locked});
+  notify(t.locked?'🔒 Тема закрыта':'🔓 Тема открыта','ok');openForumTopic(id);
+}
+async function deleteForumTopic(id){
+  await fsDel('forumTopics',id);
+  const cat=localForumCat.find(c=>c.id===curForumCatId);
+  if(cat){cat._topics=(cat._topics||[]).filter(x=>x.id!==id);cat.topicsCount=Math.max(0,(cat.topicsCount||1)-1);fsUpdate('forumCategories',cat.id,{topicsCount:cat.topicsCount});}
+  notify('🗑 Тема удалена','err');backToForumCat();
+}
+async function deleteForumReply(id,topicId){
+  await fsDel('forumReplies',id);
+  if(curForumTopic){curForumTopic.repliesCount=Math.max(0,(curForumTopic.repliesCount||1)-1);fsUpdate('forumTopics',topicId,{repliesCount:curForumTopic.repliesCount});}
+  notify('🗑 Ответ удалён','err');renderForumReplies(topicId);
+}
+
+// ── АДМИНКА ФОРУМА: разделы + "краски"/ранги пользователей ─────────────────
+function renderForumCatAdmin(){
+  const g=document.getElementById('admForumCat');
+  if(!localForumCat.length){g.innerHTML=`<div class="empty"><div class="ei">💬</div><h3>Разделов нет</h3></div>`;}
+  else{
+    g.innerHTML=localForumCat.map(c=>`
+      <div class="fcat-card" style="--fcolor:${c.color||'#7b61ff'};cursor:default;">
+        <div class="fcat-ic">${c.icon||'💬'}</div>
+        <div class="fcat-name">${escHtml(c.name)}</div>
+        <div class="fcat-desc">${escHtml(c.desc||'')}</div>
+        <button class="btn bdn bsm" onclick="delForumCategory('${c.id}')">🗑 Удалить раздел</button>
+      </div>`).join('');
+  }
+}
+async function addForumCategory(){
+  const name=document.getElementById('fcName').value.trim();
+  const desc=document.getElementById('fcDesc').value.trim();
+  const icon=document.getElementById('fcIcon').value.trim()||'💬';
+  const color=document.getElementById('fcColor').value||'#7b61ff';
+  if(!name){notify('Введите название раздела!','err');return;}
+  const data={name,desc,icon,color,topicsCount:0,ts:Date.now()};
+  const newId=await fsAdd('forumCategories',data);
+  if(!newId){notify('❌ Ошибка создания','err');return;}
+  localForumCat.push({id:newId,...data});
+  document.getElementById('fcName').value='';document.getElementById('fcDesc').value='';document.getElementById('fcIcon').value='';
+  renderForumCatAdmin();notify('✅ Раздел создан','ok');
+}
+async function delForumCategory(id){
+  await fsDel('forumCategories',id);localForumCat=localForumCat.filter(c=>c.id!==id);
+  renderForumCatAdmin();notify('🗑 Раздел удалён','err');
+}
+function forumColorPicker(){
+  return FORUM_COLORS.map(c=>`<span class="fcolor-dot" style="background:${c};" onclick="pickForumColor('${c}',this)"></span>`).join('');
+}
+let selectedForumColor=FORUM_COLORS[0];
+function pickForumColor(c,el){
+  selectedForumColor=c;
+  document.querySelectorAll('#fcColorPicker .fcolor-dot').forEach(d=>d.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function renderForumRanksAdmin(){
+  const t=document.getElementById('forumRankTab');
+  const ranked=localUsers.filter(u=>u.forumRank);
+  let html=`<div class="ur uh"><div></div><div>Пользователь</div><div>Краска</div><div class="cd"></div><div>Действия</div></div>`;
+  html+=ranked.map(u=>`<div class="ur">
+    ${fUserAvHtml(u,'uav2')}
+    <div><div style="font-weight:500;">${escHtml(u.name)}</div><div style="font-size:12px;color:var(--m);">@${escHtml(u.un)}</div></div>
+    <div>${forumBadge(u)}</div><div class="cd"></div>
+    <div><button class="btn bdn bsm" onclick="removeForumRank('${u.id}')">Снять</button></div>
+  </div>`).join('');
+  t.innerHTML=html||`<div class="empty"><div class="ei">🎨</div><h3>Никому ещё не выдана краска</h3></div>`;
+}
+async function assignForumRank(){
+  const v=document.getElementById('frInp').value.trim().replace('@','').toLowerCase();
+  const rank=document.getElementById('frRank').value.trim();
+  if(!v||!rank){notify('Укажите username и название краски!','err');return;}
+  const u=localUsers.find(x=>x.un===v);
+  if(!u){notify('❌ Пользователь не найден (должен хотя бы раз войти на сайт)','err');return;}
+  u.forumRank=rank;u.forumColor=selectedForumColor;
+  await fsUpdate('users',u.id,{forumRank:rank,forumColor:selectedForumColor});
+  document.getElementById('frInp').value='';document.getElementById('frRank').value='';
+  renderForumRanksAdmin();notify(`✅ @${v} получил краску "${rank}"`,'ok');
+}
+async function removeForumRank(id){
+  const u=localUsers.find(x=>x.id===id);if(!u)return;
+  u.forumRank=null;u.forumColor=null;
+  await fsUpdate('users',id,{forumRank:'',forumColor:''});
+  renderForumRanksAdmin();notify('Краска снята','ok');
+}
+
 
 // ── MODALS ────────────────────────────────────────────────────────────────────
 function oOv(id){document.getElementById(id).classList.remove('hidden');document.body.style.overflow='hidden';}
