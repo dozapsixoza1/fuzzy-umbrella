@@ -1516,7 +1516,7 @@ async function showProf(id){
   oOv('profOv');
 }
 
-      // ── COMMENTS ─────────────────────────────────────────────────────────────────
+// ── COMMENTS ─────────────────────────────────────────────────────────────────
 function renderCommentsHtml(comments,catId){
   const roots=comments.filter(c=>!c.parentId).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const replies=comments.filter(c=>c.parentId);
@@ -1725,7 +1725,7 @@ function renderShop(){
   }).join('');
 }
 
-function confirmBuy(itemId){
+  function confirmBuy(itemId){
   if(!cu){notify('Войдите!','err');return;}
   const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
   const coins=cu.coins||0;
@@ -2221,8 +2221,8 @@ if(window._firebaseReady){
 .lucide-emoji[data-slug="skull"]{color:var(--err);}
 .lucide-emoji[data-slug="gift"],
 .lucide-emoji[data-slug="sparkles"]{color:var(--a2);}
-.lucide-emoji[data-slug="check-circle"]{color:var(--ok);}
-.lucide-emoji[data-slug="x-circle"],
+.lucide-emoji[data-slug="circle-check"]{color:var(--ok);}
+.lucide-emoji[data-slug="circle-x"],
 .lucide-emoji[data-slug="x"]{color:var(--err);}
 </style>
 <script>
@@ -2232,8 +2232,8 @@ if(window._firebaseReady){
     '🪙':'coins','🏪':'store','📋':'clipboard-list','📚':'book-open','📰':'newspaper',
     '👥':'users','🥇':'medal','🛡':'shield','✕':'x','🎁':'gift','🏆':'trophy',
     '👑':'crown','📅':'calendar','📆':'calendar-days','🗓':'calendar-days','♾':'infinity',
-    '❌':'x-circle','🔒':'lock','🎵':'music','🎮':'gamepad-2','▶️':'play',
-    '📌':'pin','➤':'arrow-right','➔':'arrow-right','←':'arrow-left','✅':'check-circle',
+    '❌':'circle-x','🔒':'lock','🎵':'music','🎮':'gamepad-2','▶️':'play',
+    '📌':'pin','➤':'arrow-right','➔':'arrow-right','←':'arrow-left','✅':'circle-check',
     '⭐':'star','🌸':'flower-2','📝':'pen-line','✍️':'pen-line','🖋️':'pen-line',
     '🎙️':'mic','💀':'skull','🌟':'sparkles','🔔':'bell','⚙️':'settings'
   };
@@ -2241,7 +2241,7 @@ if(window._firebaseReady){
   const emojiKeys=Object.keys(EMOJI_ICON_MAP).sort((a,b)=>b.length-a.length);
   const emojiRegex=new RegExp('('+emojiKeys.map(e=>e.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gu');
 
-  function makeIcon(slug){
+  function makeIcon(slug,fallbackChar){
     const svgNS='http://www.w3.org/2000/svg';
     const svg=document.createElementNS(svgNS,'svg');
     svg.setAttribute('class','lucide-emoji');
@@ -2256,6 +2256,14 @@ if(window._firebaseReady){
     use.setAttributeNS('http://www.w3.org/1999/xlink','href',LUCIDE_SPRITE+'#'+slug);
     use.setAttribute('href',LUCIDE_SPRITE+'#'+slug);
     svg.appendChild(use);
+    // если иконка не отрисовалась (символ не найден) — откатываемся на исходный эмодзи
+    setTimeout(()=>{
+      try{
+        if(svg.getBBox().width===0){
+          svg.replaceWith(document.createTextNode(fallbackChar));
+        }
+      }catch(e){}
+    },400);
     return svg;
   }
 
@@ -2269,7 +2277,7 @@ if(window._firebaseReady){
       let last=0,m;
       while((m=emojiRegex.exec(text))){
         if(m.index>last)frag.appendChild(document.createTextNode(text.slice(last,m.index)));
-        frag.appendChild(makeIcon(EMOJI_ICON_MAP[m[0]]));
+        frag.appendChild(makeIcon(EMOJI_ICON_MAP[m[0]],m[0]));
         last=m.index+m[0].length;
       }
       if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));
