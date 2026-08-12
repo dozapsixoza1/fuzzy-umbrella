@@ -1593,7 +1593,7 @@ async function showUserProfile(userId){
     </div>`:''}`;
 }
 
-  // ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
+// ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
 function handleAv(inp){
   if(!inp.files||!inp.files[0])return;const f=inp.files[0];
   if(f.size>6*1024*1024){notify('Файл слишком большой! Макс 6 МБ','err');return;}
@@ -1602,7 +1602,7 @@ function handleAv(inp){
   rd.onerror=()=>notify('Ошибка чтения файла!','err');rd.readAsDataURL(f);
 }
 
-// ── APPLICATION ───────────────────────────────────────────────────────────────
+  // ── APPLICATION ───────────────────────────────────────────────────────────────
 function showAppPage(){if(!cu){showAuth();return;}document.getElementById('aUN').value=cu.un;document.getElementById('aN').value=cu.name;b64=null;document.getElementById('avP').innerHTML='<span id="avIco">🖼️</span>';document.getElementById('avSt').textContent='';showPage('appPage');}
 function togT(el){el.classList.toggle('on');}
 function getTags(){return[...document.querySelectorAll('.tt.on')].map(t=>t.dataset.tag);}
@@ -2142,6 +2142,10 @@ if(window._firebaseReady){
   document.addEventListener('firebaseReady',()=>{loadData();initAuthListener();},{once:true});
 }
 </script>
+<!-- ВРЕМЕННО: консоль для диагностики с телефона. Удали после того как разберёмся с эмодзи -->
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+
 <!-- Twemoji: превращает нативные эмодзи в красивые SVG-иконки -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js"></script>
 <script>
