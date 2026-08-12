@@ -12,6 +12,9 @@
     getFirestore, collection, doc, getDocs, getDoc,
     addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getAuth, signInWithCustomToken, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAB9jJk4XNd3RmSJ8dMafthQMtkiqMBQZA",
@@ -26,12 +29,15 @@
   const firebaseApp = initializeApp(firebaseConfig);
   const analytics = getAnalytics(firebaseApp);
   const db = getFirestore(firebaseApp);
+  const auth = getAuth(firebaseApp);
 
   window._db = db;
+  window._auth = auth;
   window._fs = {
     collection, doc, getDocs, getDoc, addDoc, setDoc,
     updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, increment
   };
+  window._authFns = { signInWithCustomToken, signOut, onAuthStateChanged };
   window._firebaseReady = true;
   document.dispatchEvent(new Event('firebaseReady'));
 </script>
@@ -1201,32 +1207,63 @@ async function doLoginToken(){
   if(!token){notify('Введите токен!','err');return;}
   const btn=document.getElementById('loginBtn');
   btn.textContent='⏳ Проверяем...';btn.disabled=true;
-  const td=await fsGetToken(token);
-  if(!td){notify('❌ Токен не найден. Получите новый в боте.','err');btn.textContent='🔐 Войти по токену';btn.disabled=false;return;}
-  if(td.used){notify('❌ Токен уже использован. Получите новый /token','err');btn.textContent='🔐 Войти по токену';btn.disabled=false;return;}
-  const created=td.createdAt?(td.createdAt.toMillis?td.createdAt.toMillis():Number(td.createdAt)):0;
-  if(created&&(Date.now()-created>10*60*1000)){notify('⏰ Токен истёк. Получите новый командой /token','err');btn.textContent='🔐 Войти по токену';btn.disabled=false;return;}
-  await fsUpdate('tokens',token,{used:true});
-  const tgId=String(td.tgId||'');
-  const un=(td.username||'').toLowerCase().replace('@','')||tgId;
-  const name=td.name||un;
-  let u=localUsers.find(x=>x.tgId===tgId||(un&&x.un===un));
-  if(!u){
-    const role=(un===SA)?'admin':'user';
-    const data={un,name,role,joined:new Date().toISOString().split('T')[0],av:null,tgId,coins:100,purchases:[]};
-    const newId=await fsAdd('users',data);u={id:newId,...data};localUsers.push(u);
-  }else{
-    if(un===SA&&u.role!=='admin'){u.role='admin';await fsUpdate('users',u.id,{role:'admin'});}
-    if(u.name!==name){u.name=name;await fsUpdate('users',u.id,{name});}
-    if(u.coins===undefined){u.coins=0;await fsUpdate('users',u.id,{coins:0});}
-    if(!u.purchases){u.purchases=[];await fsUpdate('users',u.id,{purchases:[]});}
+  try{
+    const {signInWithCustomToken}=window._authFns;
+    const cred=await signInWithCustomToken(window._auth,token);
+    await finishLogin(cred.user);
+  }catch(e){
+    console.error(e);
+    let msg='❌ Токен недействителен. Получите новый /token в боте.';
+    if(e.code==='auth/user-disabled')msg='❌ Аккаунт заблокирован.';
+    if(e.code==='auth/invalid-custom-token'||e.code==='auth/custom-token-mismatch')msg='❌ Токен повреждён или устарел. Получите новый /token.';
+    notify(msg,'err');
   }
-  cu=u;document.getElementById('tokenInput').value='';btn.textContent='🔐 Войти по токену';btn.disabled=false;
+  btn.textContent='🔐 Войти по токену';btn.disabled=false;
+  document.getElementById('tokenInput').value='';
+}
+
+async function finishLogin(fbUser){
+  const uid=fbUser.uid;
+  let u=await fsGetDoc('users',uid);
+  const claims=(await fbUser.getIdTokenResult()).claims||{};
+  const un=(claims.un||'').toLowerCase()||uid;
+  const name=claims.name||un;
+  if(!u){
+    // role всегда 'user' при создании — так требуют Firestore Rules.
+    // Владельцу (SA) роль admin выставляет бот через Admin SDK при выдаче токена.
+    const data={un,name,role:'user',joined:new Date().toISOString().split('T')[0],av:null,tgId:claims.tgId||'',coins:100,purchases:[]};
+    const ok=await fsSet('users',uid,data);
+    if(!ok){notify('❌ Не удалось создать профиль','err');return;}
+    u={id:uid,...data};localUsers.push(u);
+    // после создания подтягиваем актуальную роль (вдруг бот уже выставил admin)
+    const fresh=await fsGetDoc('users',uid);if(fresh)u=fresh;
+  }else{
+    if(u.name!==name){u.name=name;await fsUpdate('users',uid,{name});}
+    if(u.coins===undefined){u.coins=0;await fsUpdate('users',uid,{coins:0});}
+    if(!u.purchases){u.purchases=[];await fsUpdate('users',uid,{purchases:[]});}
+    const idx=localUsers.findIndex(x=>x.id===uid);if(idx>=0)localUsers[idx]=u;else localUsers.push(u);
+  }
+  cu=u;
   await loadNotifications();
   updateNav();goHome();notify('👋 Добро пожаловать, '+name+'!','ok');
 }
 
-function logout(){cu=null;notifications=[];if(chatUnsubscribe){chatUnsubscribe();chatUnsubscribe=null;}updateNav();goHome();notify('Вы вышли из аккаунта','ok');}
+function logout(){
+  const {signOut}=window._authFns||{};
+  if(signOut&&window._auth)signOut(window._auth).catch(e=>console.error(e));
+  cu=null;notifications=[];if(chatUnsubscribe){chatUnsubscribe();chatUnsubscribe=null;}updateNav();goHome();notify('Вы вышли из аккаунта','ok');
+}
+
+// восстановление сессии при обновлении страницы
+function initAuthListener(){
+  const {onAuthStateChanged}=window._authFns;
+  onAuthStateChanged(window._auth,async(fbUser)=>{
+    if(fbUser&&!cu){
+      let u=await fsGetDoc('users',fbUser.uid);
+      if(u){cu=u;await loadNotifications();updateNav();}
+    }
+  });
+}
 
 // ── ROLE HELPERS ──────────────────────────────────────────────────────────────
 function isAdmin(){return cu&&cu.role==='admin';}
@@ -1526,586 +1563,4 @@ async function showUserProfile(userId){
         </div>
         <div class="prof-name">
           ${u.name}
-          ${isVerif?`<span class="vico" title="Верифицирован">✓</span>`:''}
-          ${u.role!=='user'?`<span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span>`:''}
-        </div>
-        <div class="prof-un">@${u.un}</div>
-        <div class="prof-badges">
-          <span class="rb ${isPrem?'rprem':roleClass(u.role)}">${isPrem?'⭐ Премиум':roleName(u.role)}</span>
-          <span style="font-size:12px;color:var(--m);">📅 С ${u.joined}</span>
-          <span style="font-size:12px;color:var(--gold);">🪙 ${u.coins||0} монет</span>
-        </div>
-        ${sigs.length?`<div style="margin-bottom:16px;">${sigs.map(k=>`<span class="sig-badge ${SIG_STYLES[k].cls}">${SIG_STYLES[k].label}</span>`).join('')}</div>`:''}
-        <div class="prof-stats">
-          <div class="prof-stat"><div class="prof-stat-n">${userApps.length}</div><div class="prof-stat-l">Заявок</div></div>
-          <div class="prof-stat"><div class="prof-stat-n">${approved}</div><div class="prof-stat-l">Одобрено</div></div>
-          <div class="prof-stat"><div class="prof-stat-n">${comments.length}</div><div class="prof-stat-l">Комментов</div></div>
-        </div>
-      </div>
-    </div>
-    ${userApps.length?`
-    <div class="prof-section">
-      <div class="prof-section-title">📋 Заявки</div>
-      ${userApps.map(a=>`<div class="ai2" style="margin-bottom:10px;">
-        <div class="aav">${a.av?`<img src="${a.av}" alt="">`:a.em||'🙂'}</div>
-        <div class="ainf"><div class="an">${a.name}</div><div class="am"><span>${a.cat}</span><span>${a.dt}</span></div>
-        <span class="sb ${stCls(a.st)}">${stTx(a.st)}</span></div></div>`).join('')}
-    </div>`:''}
-    ${cu&&cu.id===userId&&isModer()?`
-    <div class="prof-section">
-      <div class="prof-section-title">⚙️ Управление</div>
-      <button class="btn bgr" onclick="showAdmin()">Открыть панель</button>
-    </div>`:''}`;
-}
-
-// ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
-function handleAv(inp){
-  if(!inp.files||!inp.files[0])return;const f=inp.files[0];
-  if(f.size>6*1024*1024){notify('Файл слишком большой! Макс 6 МБ','err');return;}
-  const rd=new FileReader();
-  rd.onload=e=>{b64=e.target.result;document.getElementById('avP').innerHTML=`<img src="${b64}" alt="avatar">`;document.getElementById('avSt').textContent='✅ Фото загружено!';};
-  rd.onerror=()=>notify('Ошибка чтения файла!','err');rd.readAsDataURL(f);
-}
-
-// ── APPLICATION ───────────────────────────────────────────────────────────────
-function showAppPage(){if(!cu){showAuth();return;}document.getElementById('aUN').value=cu.un;document.getElementById('aN').value=cu.name;b64=null;document.getElementById('avP').innerHTML='<span id="avIco">🖼️</span>';document.getElementById('avSt').textContent='';showPage('appPage');}
-function togT(el){el.classList.toggle('on');}
-function getTags(){return[...document.querySelectorAll('.tt.on')].map(t=>t.dataset.tag);}
-function prevApp(){
-  const name=document.getElementById('aN').value.trim(),un=document.getElementById('aUN').value.trim().replace('@',''),cat=document.getElementById('aCat').value,desc=document.getElementById('aDesc').value.trim();
-  if(!name||!un||!cat||!desc){notify('Заполните все обязательные поля!','err');return;}
-  const av=b64?`<img src="${b64}" alt="">`:`<span style="font-size:44px;">🙂</span>`;
-  document.getElementById('prevBody').innerHTML=`<div class="dhd"><div class="dav">${av}</div><div><div class="dn">${name}</div><div class="du">@${un}</div><div class="dt"><span class="tag tcat">${cat}</span>${getTags().map(t=>`<span class="tag tmic">${t}</span>`).join('')}</div></div></div><p style="color:var(--m);font-size:14px;line-height:1.7;">${desc}</p>`;
-  oOv('prevOv');
-}
-async function submitApp(){
-  if(!cu){showAuth();return;}
-  const name=document.getElementById('aN').value.trim(),un=document.getElementById('aUN').value.trim().replace('@',''),cat=document.getElementById('aCat').value,desc=document.getElementById('aDesc').value.trim(),ch=document.getElementById('aCh').value.trim(),tt=document.getElementById('aTt').value.trim();
-  if(!name||!un||!cat||!desc){notify('Заполните все обязательные поля!','err');return;}
-  notify('⏳ Отправляем...','ok');
-  const data={uid:cu.id,un:cu.un,name,aun:un,cat,tags:getTags(),desc,av:b64,em:'🙂',ch,tt,st:'pending',dt:new Date().toISOString().split('T')[0],isN:true};
-  const newId=await fsAdd('apps',data);
-  if(!newId){notify('Ошибка сохранения заявки!','err');return;}
-  localApps.push({id:newId,...data});
-  ['aN','aDesc','aCh','aTt'].forEach(id=>document.getElementById(id).value='');document.getElementById('aCat').value='';document.getElementById('dcc').textContent='0';document.querySelectorAll('.tt.on').forEach(t=>t.classList.remove('on'));b64=null;document.getElementById('avP').innerHTML='<span id="avIco">🖼️</span>';document.getElementById('avSt').textContent='';updStats();
-  notify('✅ Заявка отправлена! Ожидайте решения модераторов.','ok');
-}
-function showMyApps(){
-  if(!cu)return;const my=localApps.filter(a=>a.uid===cu.id);const body=document.getElementById('myAppsB');
-  if(!my.length){body.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>Заявок нет</h3><p>Вы ещё не подавали заявки</p></div>`;}
-  else{body.innerHTML=my.map(a=>`<div class="ai2" style="margin-bottom:10px;"><div class="aav">${a.av?`<img src="${a.av}" alt="">`:a.em}</div><div class="ainf"><div class="an">${a.name}</div><div class="am"><span>@${a.aun}</span><span>${a.cat}</span><span>${a.dt}</span></div><span class="sb ${stCls(a.st)}">${stTx(a.st)}</span></div></div>`).join('');}
-  oOv('myAppsOv');
-}
-
-// ── SHOP ──────────────────────────────────────────────────────────────────────
-function renderShop(){
-  const pur=cu?cu.purchases||[]:[];
-  const coins=cu?cu.coins||0:0;
-  document.getElementById('shopCoins').textContent=coins;
-  const g=document.getElementById('shopGrid');
-  g.innerHTML=SHOP_ITEMS.map((item,i)=>{
-    const owned=pur.includes(item.id);
-    const canBuy=!owned&&coins>=item.price;
-    return `<div class="sitem rar-${item.rarity}" style="animation-delay:${i*.07}s;">
-      <div class="rar-label">${RAR_LABELS[item.rarity]}</div>
-      <span class="sitem-ico">${item.icon}</span>
-      <div class="sitem-name">${item.name}</div>
-      <div class="sitem-desc">${item.desc}</div>
-      <div class="sitem-foot">
-        <div class="coin-price">🪙 ${item.price}</div>
-        ${owned
-          ?`<span class="owned-tag">✅ Куплено</span>`
-          :`<button class="btn ${canBuy?'bgr':'bgh'} bsm" onclick="confirmBuy('${item.id}')">${canBuy?'Купить':'Нет монет'}</button>`
-        }
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function confirmBuy(itemId){
-  if(!cu){notify('Войдите!','err');return;}
-  const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
-  const coins=cu.coins||0;
-  const canBuy=coins>=item.price&&!(cu.purchases||[]).includes(itemId);
-  if(!canBuy){
-    if((cu.purchases||[]).includes(itemId)){notify('Уже куплено!','err');return;}
-    notify(`Недостаточно монет! Нужно ${item.price}, у вас ${coins}🪙`,'err');return;
-  }
-  document.getElementById('buyConfirmBody').innerHTML=`
-    <div style="text-align:center;padding-bottom:20px;">
-      <div style="font-size:60px;margin-bottom:14px;">${item.icon}</div>
-      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px;">${item.name}</div>
-      <div style="font-size:13px;color:var(--m);margin-bottom:20px;">${item.desc}</div>
-      <div style="padding:14px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:12px;margin-bottom:20px;">
-        <div style="font-size:13px;color:var(--m);margin-bottom:4px;">Стоимость</div>
-        <div style="font-size:24px;font-weight:800;color:var(--gold);">🪙 ${item.price}</div>
-        <div style="font-size:12px;color:var(--m);margin-top:4px;">Остаток после покупки: <b style="color:var(--gold);">${coins-item.price}</b> 🪙</div>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn bgh" style="flex:1;justify-content:center;" onclick="cOvId('buyConfirmOv')">Отмена</button>
-        <button class="btn bgold" style="flex:1;justify-content:center;" onclick="doBuy('${itemId}')">✅ Купить</button>
-      </div>
-    </div>`;
-  oOv('buyConfirmOv');
-}
-
-async function doBuy(itemId){
-  if(!cu)return;
-  const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
-  const coins=cu.coins||0;
-  const pur=cu.purchases||[];
-  if(pur.includes(itemId)){notify('Уже куплено!','err');cOvId('buyConfirmOv');return;}
-  if(coins<item.price){notify('Недостаточно монет!','err');cOvId('buyConfirmOv');return;}
-  const newCoins=coins-item.price;
-  const newPur=[...pur,itemId];
-  const ok=await fsUpdate('users',cu.id,{coins:newCoins,purchases:newPur});
-  if(!ok){notify('Ошибка покупки!','err');return;}
-  cu.coins=newCoins;cu.purchases=newPur;
-  const u=localUsers.find(x=>x.id===cu.id);
-  if(u){u.coins=newCoins;u.purchases=newPur;}
-  cOvId('buyConfirmOv');
-  renderShop();updateNav();filterCards();
-  notify(`🎉 ${item.name} успешно куплено!`,'ok');
-}
-
-// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
-async function loadNotifications(){
-  if(!cu)return;
-  const notifs=await fsQuery('notifications','uid','==',cu.id);
-  notifications=notifs.sort((a,b)=>(b.ts||0)-(a.ts||0));
-  updateNotifBell();
-}
-function updateNotifBell(){
-  const dot=document.getElementById('notifDot');
-  if(dot)dot.classList.toggle('show',notifications.filter(n=>!n.read).length>0);
-}
-async function addNotification(uid,msg,type='info'){
-  const data={uid,msg,type,ts:Date.now(),read:false};
-  const newId=await fsAdd('notifications',data);
-  if(cu&&cu.id===uid){notifications.unshift({id:newId,...data});updateNotifBell();}
-}
-function toggleNotifPanel(){
-  const p=document.getElementById('notifPanel');
-  p.classList.toggle('hidden');
-  if(!p.classList.contains('hidden'))renderNotifList();
-}
-function renderNotifList(){
-  const list=document.getElementById('notifList');
-  if(!notifications.length){list.innerHTML='<div class="notif-empty">Нет уведомлений 🔕</div>';return;}
-  const ico={ok:'✅',err:'❌',info:'ℹ️',reply:'💬'};
-  const cls={ok:'nok',err:'nerr',info:'ninfo',reply:'ninfo'};
-  list.innerHTML=notifications.slice(0,30).map(n=>{
-    const t=new Date(n.ts||Date.now());
-    const ts=t.getDate()+'.'+(t.getMonth()+1)+' '+t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
-    return `<div class="notif-item${n.read?'':' unread'}" onclick="markRead('${n.id}')">
-      <div class="notif-ico ${cls[n.type]||'ninfo'}">${ico[n.type]||'ℹ️'}</div>
-      <div class="notif-txt"><div class="notif-msg">${n.msg}</div><div class="notif-time">${ts}</div></div>
-    </div>`;
-  }).join('');
-}
-async function markRead(id){
-  const n=notifications.find(x=>x.id===id);if(!n||n.read)return;
-  n.read=true;await fsUpdate('notifications',id,{read:true});updateNotifBell();renderNotifList();
-}
-async function markAllRead(){
-  for(const n of notifications.filter(n=>!n.read)){n.read=true;await fsUpdate('notifications',n.id,{read:true});}
-  updateNotifBell();renderNotifList();
-}
-document.addEventListener('click',e=>{
-  const p=document.getElementById('notifPanel');if(!p||p.classList.contains('hidden'))return;
-  const b=document.getElementById('notifBellBtn');if(b&&b.contains(e.target))return;
-  if(!p.contains(e.target))p.classList.add('hidden');
-});
-
-// ── ADMIN GIVE COINS ──────────────────────────────────────────────────────────
-function openGiveCoins(userId){
-  const u=localUsers.find(x=>x.id===userId);if(!u)return;
-  document.getElementById('gcUserId').value=userId;
-  document.getElementById('gcUserName').textContent=u.name;
-  document.getElementById('gcUserAv').textContent=u.name.charAt(0).toUpperCase();
-  document.getElementById('gcCurCoins').textContent=u.coins||0;
-  document.getElementById('gcAmount').value='';
-  oOv('giveCoinsOv');
-}
-async function doGiveCoins(){
-  const userId=document.getElementById('gcUserId').value;
-  const amount=parseInt(document.getElementById('gcAmount').value)||0;
-  if(!amount||amount<=0){notify('Введите корректную сумму!','err');return;}
-  const u=localUsers.find(x=>x.id===userId);if(!u){notify('Пользователь не найден!','err');return;}
-  const newCoins=(u.coins||0)+amount;
-  await fsUpdate('users',userId,{coins:newCoins});
-  u.coins=newCoins;
-  if(cu&&cu.id===userId){cu.coins=newCoins;updateNav();}
-  await addNotification(userId,`🪙 Вам начислено ${amount} монет от администрации!`,'ok');
-  document.getElementById('gcCurCoins').textContent=newCoins;
-  cOvId('giveCoinsOv');
-  renderUsers();
-  notify(`🪙 +${amount} монет начислено ${u.name}!`,'ok');
-}
-
-// ── POSTS ─────────────────────────────────────────────────────────────────────
-function handlePostImg(inp){
-  if(!inp.files||!inp.files[0])return;const f=inp.files[0];
-  if(f.size>6*1024*1024){notify('Файл слишком большой!','err');return;}
-  const rd=new FileReader();
-  rd.onload=e=>{postImgB64=e.target.result;document.getElementById('postImgP').innerHTML=`<img src="${postImgB64}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;document.getElementById('postImgSt').textContent='✅ Фото загружено!';};
-  rd.readAsDataURL(f);
-}
-async function submitPost(){
-  if(!isDeputy()){notify('Нет доступа!','err');return;}
-  const title=document.getElementById('postTitle').value.trim(),text=document.getElementById('postText').value.trim();
-  if(!title||!text){notify('Заполните заголовок и текст!','err');return;}
-  const data={title,text,img:postImgB64||null,author:cu.name,authorRole:cu.role,dt:new Date().toISOString().split('T')[0],ts:Date.now()};
-  const newId=await fsAdd('posts',data);
-  if(!newId){notify('Ошибка публикации!','err');return;}
-  localPosts.unshift({id:newId,...data});
-  document.getElementById('postTitle').value='';document.getElementById('postText').value='';
-  postImgB64=null;document.getElementById('postImgP').innerHTML='🖼️';document.getElementById('postImgSt').textContent='';
-  cOvId('newPostOv');renderAdmPosts();notify('📰 Пост опубликован!','ok');
-}
-function renderPublicPosts(){
-  const g=document.getElementById('postsPublicGrid');
-  if(!localPosts.length){g.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>Постов пока нет</h3></div>`;return;}
-  g.innerHTML=`<div class="posts-grid">`+localPosts.sort((a,b)=>(b.ts||0)-(a.ts||0)).map(p=>postCardHtml(p,false)).join('')+'</div>';
-}
-function renderAdmPosts(){
-  const g=document.getElementById('admPostsGrid');
-  if(!localPosts.length){g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="ei">📭</div><h3>Постов нет</h3></div>`;return;}
-  g.innerHTML=localPosts.sort((a,b)=>(b.ts||0)-(a.ts||0)).map(p=>postCardHtml(p,true)).join('');
-}
-function postCardHtml(p,admin){
-  return`<div class="post-card">
-    ${p.img?`<img class="post-img" src="${p.img}" alt="">`:`<div class="post-img-placeholder">📰</div>`}
-    <div class="post-body">
-      <div class="post-title">${p.title}</div>
-      <div class="post-text">${p.text}</div>
-      <div class="post-meta">
-        <div class="post-ava">${p.author?p.author.charAt(0):'?'}</div>
-        <span>${p.author||'?'}</span>
-        <span class="rb ${roleClass(p.authorRole||'user')}">${roleName(p.authorRole||'user')}</span>
-        <span style="margin-left:auto;">${p.dt||''}</span>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;">
-        <button class="btn bgh bsm" onclick="viewPost('${p.id}')">👁 Читать</button>
-        ${admin&&isDeputy()?`<button class="btn bdn bsm" onclick="delPost('${p.id}')">🗑</button>`:''}
-      </div>
-    </div></div>`;
-}
-function viewPost(id){
-  const p=localPosts.find(x=>x.id===id);if(!p)return;
-  document.getElementById('postViewTitle').textContent=p.title;
-  document.getElementById('postViewBody').innerHTML=`${p.img?`<img src="${p.img}" style="width:100%;border-radius:12px;margin-bottom:16px;max-height:300px;object-fit:cover;">`:''}
-    <p style="font-size:15px;line-height:1.75;color:var(--m);white-space:pre-wrap;">${p.text}</p>
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--b);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--m);">
-      <span>${p.author}</span><span class="rb ${roleClass(p.authorRole||'user')}">${roleName(p.authorRole||'user')}</span><span style="margin-left:auto;">${p.dt}</span>
-    </div>`;
-  oOv('postViewOv');
-}
-async function delPost(id){await fsDel('posts',id);localPosts=localPosts.filter(x=>x.id!==id);renderAdmPosts();notify('🗑 Пост удалён','err');}
-
-// ── CHAT ──────────────────────────────────────────────────────────────────────
-const CMDS_ADMIN=[{cmd:'/ban @user',desc:'Заблокировать'},{cmd:'/unban @user',desc:'Разблокировать'},{cmd:'/clear',desc:'Очистить чат'},{cmd:'/announce текст',desc:'Анонс'}];
-const CMDS_DEPUTY=[{cmd:'/ban @user',desc:'Заблокировать'},{cmd:'/mute @user',desc:'Замутить'},{cmd:'/announce текст',desc:'Анонс'}];
-const CMDS_MODER=[{cmd:'/mute @user',desc:'Замутить'},{cmd:'/warn @user',desc:'Предупреждение'},{cmd:'/check @user',desc:'Проверить статус'}];
-const CMDS_USER=[{cmd:'/help',desc:'Команды'},{cmd:'/me текст',desc:'Действие'},{cmd:'/info',desc:'Инфо о себе'}];
-function getCmds(){if(isAdmin())return[...CMDS_ADMIN,...CMDS_USER];if(isDeputy())return[...CMDS_DEPUTY,...CMDS_USER];if(cu&&cu.role==='moder')return[...CMDS_MODER,...CMDS_USER];return CMDS_USER;}
-function checkCmd(val){const h=document.getElementById('cmdHelp');if(!val.startsWith('/')||!cu){h.classList.add('hidden');return;}const cmds=getCmds();const q=val.toLowerCase();const match=cmds.filter(c=>c.cmd.toLowerCase().startsWith(q));if(!match.length){h.classList.add('hidden');return;}h.innerHTML='<b>Команды:</b> '+match.map(c=>`<br><span style="color:var(--a);">${c.cmd}</span> — ${c.desc}`).join('');h.classList.remove('hidden');}
-function chatInpResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-async function sendChatMsg(){
-  if(!cu){showAuth();return;}
-  const inp=document.getElementById('chatInp'),text=inp.value.trim();if(!text)return;
-  if(text.startsWith('/')){
-    const parts=text.split(' '),cmd=parts[0].toLowerCase();inp.value='';inp.style.height='auto';document.getElementById('cmdHelp').classList.add('hidden');
-    if(cmd==='/help'){renderChatMsg({text:'📋 Команды:\n'+getCmds().map(c=>`${c.cmd} — ${c.desc}`).join('\n'),author:'Система',authorRole:'admin',ts:Date.now(),isSystem:true},true);return;}
-    if(cmd==='/me'&&parts.length>1){const action=parts.slice(1).join(' ');await fsAdd('chat',{text:`* ${cu.name} ${action}`,author:cu.name,authorRole:cu.role,uid:cu.id,ts:Date.now(),isAction:true,av:cu.av||null});return;}
-    if(cmd==='/info'){renderChatMsg({text:`ℹ️ ${cu.name} | @${cu.un} | ${roleName(cu.role)}`,author:'Система',authorRole:'admin',ts:Date.now(),isSystem:true},true);inp.value='';inp.style.height='auto';return;}
-    if(isModer()&&['/ban','/unban','/mute','/warn','/check','/announce','/clear'].includes(cmd)){renderChatMsg({text:`⚡ ${cmd} ${parts[1]||''} выполнено`,author:'Система',authorRole:'admin',ts:Date.now(),isSystem:true},true);inp.value='';inp.style.height='auto';return;}
-    notify('Неизвестная команда','err');inp.value='';inp.style.height='auto';return;
-  }
-  await fsAdd('chat',{text,author:cu.name,authorRole:cu.role,uid:cu.id,ts:Date.now(),av:cu.av||null});
-  inp.value='';inp.style.height='auto';document.getElementById('cmdHelp').classList.add('hidden');
-}
-function startChatListener(){
-  if(chatUnsubscribe)chatUnsubscribe();
-  withDB((db,fs)=>{
-    document.getElementById('chatMsgs').innerHTML='';
-    const q=fs.query(fs.collection(db,'chat'),fs.orderBy('ts','asc'));
-    chatUnsubscribe=fs.onSnapshot(q,snap=>{
-      const el=document.getElementById('chatMsgs');el.innerHTML='';
-      snap.docs.forEach(d=>{const msg={id:d.id,...d.data()};renderChatMsg(msg,msg.uid===cu?.id);});
-      el.scrollTop=el.scrollHeight;
-    },err=>console.error('chat',err));
-  });
-}
-function renderChatMsg(msg,isMine){
-  const el=document.getElementById('chatMsgs');const div=document.createElement('div');div.className='msg'+(isMine?' mine':'');
-  const av=msg.av?`<img src="${msg.av}" alt="">`:((msg.author||'?').charAt(0));
-  const isPremSender=hasPurchase(msg.uid||'','premium');
-  const isVerifSender=hasPurchase(msg.uid||'','verified');
-  const pfxCls=isPremSender?'pfx-prem':prefixClass(msg.authorRole);
-  const pfxLbl=isPremSender?'⭐ Премиум':prefixLabel(msg.authorRole);
-  const pfx=msg.isSystem?'':`<span class="msg-prefix ${pfxCls}">${pfxLbl}</span>`;
-  const verifIco=isVerifSender&&!msg.isSystem?`<span class="vico" style="width:14px;height:14px;font-size:8px;">✓</span>`:'';
-  const t=new Date(msg.ts||Date.now());const ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
-  div.innerHTML=msg.isSystem
-    ?`<div style="width:100%;text-align:center;"><div style="display:inline-block;padding:6px 14px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.12);border-radius:10px;font-size:12px;color:var(--m);white-space:pre-wrap;">${msg.text}</div></div>`
-    :`<div class="msg-av">${av}</div><div class="msg-bubble"><div class="msg-sender">${pfx}<span style="color:var(--t)">${msg.author||'?'}</span>${verifIco}</div><div class="msg-text">${msg.isAction?`<i style="color:var(--a3);">${msg.text}</i>`:msg.text}</div><div class="msg-time">${ts}</div></div>`;
-  el.appendChild(div);
-}
-
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
-function showAdmin(){if(!isModer()){notify('Нет доступа!','err');return;}showPage('adminPage');aTab('apps',document.getElementById('sApps'));}
-function aTab(tab,el){
-  document.querySelectorAll('.ai').forEach(s=>s.classList.remove('on'));el.classList.add('on');
-  ['tApps','tCat','tPosts','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
-  if(tab==='apps'){document.getElementById('tApps').style.display='block';renderAdmStats();renderAdmApps('pending');}
-  if(tab==='cat'&&isDeputy()){document.getElementById('tCat').style.display='block';renderAdmCat();}
-  if(tab==='posts'&&isDeputy()){document.getElementById('tPosts').style.display='block';renderAdmPosts();}
-  if(tab==='users'&&isAdmin()){document.getElementById('tUsers').style.display='block';renderUsers();}
-  if(tab==='deputies'&&isAdmin()){document.getElementById('tDeputies').style.display='block';renderDeputies();}
-  if(tab==='moders'&&isAdmin()){document.getElementById('tModers').style.display='block';renderMods();}
-}
-function renderAdmStats(){
-  const p=localApps.filter(a=>a.st==='pending').length;document.getElementById('appCt').textContent=p;
-  document.getElementById('admStats').innerHTML=`
-    <div class="sc sc1"><div class="scl">В каталоге</div><div class="scn">${localCat.length}</div></div>
-    <div class="sc sc3"><div class="scl">Ожидают</div><div class="scn">${p}</div></div>
-    <div class="sc sc4"><div class="scl">Одобрено</div><div class="scn">${localApps.filter(a=>a.st==='approved').length}</div></div>
-    <div class="sc sc2"><div class="scl">Пользователей</div><div class="scn">${localUsers.length}</div></div>`;
-}
-function renderAdmApps(sf){
-  renderAdmStats();const list=document.getElementById('admList');
-  const apps=sf==='all'?localApps:localApps.filter(a=>a.st===sf);
-  if(!apps.length){list.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>Заявок нет</h3></div>`;return;}
-  list.innerHTML=apps.map(a=>`<div class="ai2${a.isN&&a.st==='pending'?' isn':''}">
-    <div class="aav" style="position:relative;">${a.av?`<img src="${a.av}" alt="">`:a.em}${a.isN&&a.st==='pending'?'<div class="nd"></div>':''}</div>
-    <div class="ainf">
-      <div class="an">${a.name}</div>
-      <div class="am"><span>TG: @${a.un}</span><span>@${a.aun}</span><span>${a.cat}</span><span>${a.dt}</span></div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;"><span class="sb ${stCls(a.st)}">${stTx(a.st)}</span>${(a.tags||[]).map(t=>`<span class="tag tmic">${t}</span>`).join('')}</div>
-      <div class="ad">${a.desc}</div>
-      ${a.ch?`<div style="margin-top:4px;font-size:12px;color:var(--a);">📢 t.me/${a.ch}</div>`:''}
-      ${a.tt?`<div style="font-size:12px;color:var(--a3);">🎵 tiktok.com/@${a.tt}</div>`:''}
-    </div>
-    ${a.st==='pending'?`<div class="aac"><button class="btn bpr bsm" onclick="appApprove('${a.id}')">✅</button><button class="btn bdn bsm" onclick="appReject('${a.id}')">❌</button></div>`:''}
-  </div>`).join('');
-}
-async function appApprove(id){
-  const a=localApps.find(x=>x.id===id);if(!a)return;
-  await fsUpdate('apps',id,{st:'approved',isN:false});a.st='approved';a.isN=false;
-  const catData={name:a.name,un:a.aun,cat:a.cat,tags:a.tags||[],desc:a.desc,av:a.av,em:a.em,ch:a.ch,tt:a.tt||'',pin:false,views:0,reactions:{},uid:a.uid};
-  const newId=await fsAdd('catalog',catData);localCat.push({id:newId,...catData});
-  if(a.uid) await addNotification(a.uid,`✅ Твоя заявка "${a.name}" одобрена и добавлена в каталог!`,'ok');
-  renderAdmApps('pending');updStats();notify('✅ @'+a.un+' одобрен!','ok');
-}
-async function appReject(id){
-  const a=localApps.find(x=>x.id===id);if(!a)return;
-  await fsUpdate('apps',id,{st:'rejected',isN:false});a.st='rejected';a.isN=false;
-  if(a.uid) await addNotification(a.uid,`❌ Твоя заявка "${a.name}" отклонена модератором.`,'err');
-  renderAdmApps('pending');notify('❌ @'+a.un+' отклонён.','err');
-}
-function renderAdmCat(){
-  const g=document.getElementById('admCat');
-  g.innerHTML=localCat.map(it=>`<div class="card">
-    <div class="cth">${it.av?`<img src="${it.av}" alt="${it.name}">`:`<div class="cte">${it.em||'🙂'}</div>`}
-      <div class="cbdg">${it.pin?'<span class="tag tpin">📌</span>':''}</div>
-      <div class="views-badge">👁 ${it.views||0}</div>
-    </div>
-    <div class="cbody">
-      <div class="cname">${it.name}</div>
-      <div class="ctrow"><span class="tag tcat">${it.cat}</span></div>
-      <div class="cdesc" style="margin-bottom:12px;">${it.desc}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="btn bgh bsm" onclick="togPin('${it.id}')">${it.pin?'📌 Открепить':'📌 Закрепить'}</button>
-        <button class="btn bdn bsm" onclick="delCat('${it.id}')">🗑</button>
-      </div>
-    </div></div>`).join('');
-}
-async function togPin(id){const it=localCat.find(x=>x.id===id);if(!it)return;it.pin=!it.pin;await fsUpdate('catalog',id,{pin:it.pin});renderAdmCat();}
-async function delCat(id){await fsDel('catalog',id);localCat=localCat.filter(i=>i.id!==id);renderAdmCat();updStats();notify('🗑 Удалён','err');}
-
-function renderUsers(){
-  const t=document.getElementById('usrTab');
-  t.innerHTML=`<div class="ur uh"><div></div><div>Пользователь</div><div class="cr">Роль</div><div class="cd">Монеты</div><div>Действия</div></div>`+
-    localUsers.map(u=>{
-      const isPremU=hasPurchase(u.id,'premium');
-      return `<div class="ur">
-        <div class="uav2" style="cursor:pointer;" onclick="showUserProfile('${u.id}')">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div>
-        <div><div style="font-weight:500;">${u.name}${hasPurchase(u.id,'verified')?`<span class="vico" style="margin-left:4px;width:14px;height:14px;font-size:8px;">✓</span>`:''}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div>
-        <div class="cr"><span class="rb ${isPremU?'rprem':roleClass(u.role)}">${isPremU?'⭐':roleName(u.role)}</span></div>
-        <div class="cd" style="font-size:12px;color:var(--gold);font-weight:700;">🪙 ${u.coins||0}</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;">
-          ${isAdmin()&&u.id!==cu.id&&u.role!=='admin'?getRoleActions(u):''}
-          ${isAdmin()?`<button class="btn bgold bsm" onclick="openGiveCoins('${u.id}')" title="Начислить монеты">🪙</button>`:''}
-        </div>
-      </div>`;
-    }).join('');
-}
-function getRoleActions(u){
-  if(u.role==='deputy')return`<button class="btn bdn bsm" onclick="setRole('${u.id}','${u.un}','user')">Снять</button>`;
-  if(u.role==='moder')return`<button class="btn bgh bsm" onclick="setRole('${u.id}','${u.un}','deputy')">→ Зам</button><button class="btn bdn bsm" onclick="setRole('${u.id}','${u.un}','user')">Снять</button>`;
-  return`<button class="btn bgh bsm" onclick="setRole('${u.id}','${u.un}','moder')">→ Модер</button>`;
-}
-async function setRole(id,un,role){const u=localUsers.find(x=>x.id===id);if(!u)return;u.role=role;await fsUpdate('users',id,{role});renderUsers();renderDeputies();renderMods();notify(`✅ @${un} → ${roleName(role)}`,'ok');}
-function renderDeputies(){
-  const deps=localUsers.filter(u=>u.role==='deputy'||u.role==='admin');const t=document.getElementById('depTab');
-  t.innerHTML=`<div class="ur uh"><div></div><div>Пользователь</div><div>Роль</div><div class="cd">С</div><div>Действия</div></div>`+
-    deps.map(u=>`<div class="ur"><div class="uav2">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div><div><div style="font-weight:500;">${u.name}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div><div><span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span></div><div class="cd" style="font-size:12px;color:var(--m);">${u.joined}</div><div>${u.role==='deputy'?`<button class="btn bdn bsm" onclick="setRole('${u.id}','${u.un}','user')">Снять</button>`:`<span style="color:var(--gold);font-size:12px;">👑</span>`}</div></div>`).join('');
-}
-function renderMods(){
-  const moders=localUsers.filter(u=>u.role==='moder');const t=document.getElementById('modTab');
-  if(!moders.length){t.innerHTML=`<div class="empty"><div class="ei">🛡</div><h3>Модераторов нет</h3></div>`;return;}
-  t.innerHTML=`<div class="ur uh"><div></div><div>Пользователь</div><div>Роль</div><div class="cd">С</div><div>Действия</div></div>`+
-    moders.map(u=>`<div class="ur"><div class="uav2">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div><div><div style="font-weight:500;">${u.name}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div><div><span class="rb rmoder">${roleName('moder')}</span></div><div class="cd" style="font-size:12px;color:var(--m);">${u.joined}</div><div><button class="btn bdn bsm" onclick="setRole('${u.id}','${u.un}','user')">Снять</button></div></div>`).join('');
-}
-async function assignDeputy(){
-  const v=document.getElementById('depInp').value.trim().replace('@','').toLowerCase();if(!v){notify('Введите username!','err');return;}
-  let u=localUsers.find(x=>x.un===v);
-  if(!u){const data={un:v,name:v,role:'deputy',joined:new Date().toISOString().split('T')[0],av:null,coins:0,purchases:[]};const newId=await fsAdd('users',data);u={id:newId,...data};localUsers.push(u);}
-  else{if(u.role==='admin'){notify('Нельзя!','err');return;}u.role='deputy';await fsUpdate('users',u.id,{role:'deputy'});}
-  document.getElementById('depInp').value='';renderDeputies();notify('✅ @'+v+' — заместитель!','ok');
-}
-async function assignMod(){
-  const v=document.getElementById('modInp').value.trim().replace('@','').toLowerCase();if(!v){notify('Введите username!','err');return;}
-  let u=localUsers.find(x=>x.un===v);
-  if(!u){const data={un:v,name:v,role:'moder',joined:new Date().toISOString().split('T')[0],av:null,coins:0,purchases:[]};const newId=await fsAdd('users',data);u={id:newId,...data};localUsers.push(u);}
-  else{if(u.role==='admin'){notify('Нельзя!','err');return;}u.role='moder';await fsUpdate('users',u.id,{role:'moder'});}
-  document.getElementById('modInp').value='';renderMods();notify('✅ @'+v+' — модератор!','ok');
-}
-
-// ── TOP ACTIVITY ──────────────────────────────────────────────────────────────
-function setTopPeriod(period,el){document.querySelectorAll('.top-tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');renderTop(period);}
-function getTotalReactions(item){const rxs=item.reactions||{};return Object.values(rxs).reduce((s,v)=>s+(typeof v==='number'?v:0),0);}
-function renderTop(period){
-  const list=document.getElementById('topList');
-  const scored=localCat.map(it=>{
-    const score=getTotalReactions(it);
-    return{...it,score};
-  }).filter(it=>it.score>0).sort((a,b)=>b.score-a.score).slice(0,20);
-  if(!scored.length){list.innerHTML=`<div class="empty"><div class="ei">📊</div><h3>Нет данных</h3><p>Ставьте реакции на карточки!</p></div>`;return;}
-  const maxScore=scored[0]?.score||1;const medals=['🥇','🥈','🥉'];
-  list.innerHTML=scored.map((it,i)=>{
-    const pur=getUserPurchases(it.uid);const isVerif=pur.includes('verified');const isPrem=pur.includes('premium');
-    const rankCls=i<3?`top-${i+1}`:'';const rankLabel=i<3?medals[i]:`<span class="top-rank-n">#${i+1}</span>`;
-    const barW=Math.round((it.score/maxScore)*100);
-    return `<div class="top-item ${rankCls}" style="animation-delay:${i*.04}s;" onclick="showProf('${it.id}')">
-      <div class="top-rank">${rankLabel}</div>
-      <div class="top-av">${it.av?`<img src="${it.av}" alt="">`:(it.em||'🙂')}</div>
-      <div class="top-info">
-        <div class="top-name">${it.name}${isVerif?`<span class="vico">✓</span>`:''}${isPrem?`<span class="rb rprem" style="font-size:9px;">⭐</span>`:''}</div>
-        <div class="top-cat">${it.cat}</div>
-        <div class="top-bar-wrap"><div class="top-bar" style="width:${barW}%;"></div></div>
-      </div>
-      <div><div class="top-score">${it.score}</div><div class="top-score-lbl">реакций</div></div>
-    </div>`;
-  }).join('');
-}
-
-// ── STAFF ─────────────────────────────────────────────────────────────────────
-function renderStaff(){
-  const content=document.getElementById('staffContent');
-  const owners=localUsers.filter(u=>u.role==='admin');
-  const deps=localUsers.filter(u=>u.role==='deputy');
-  const mods=localUsers.filter(u=>u.role==='moder');
-  const sc=(u,type)=>{
-    const av=u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase();
-    const isVerif=hasPurchase(u.id,'verified');
-    return `<div class="staff-card ${type}" onclick="showUserProfile('${u.id}')">
-      <div class="staff-av">${av}</div>
-      <div class="staff-name">${u.name}${isVerif?`<span class="vico">✓</span>`:''}</div>
-      <div class="staff-un">@${u.un}</div>
-      <span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span>
-    </div>`;
-  };
-  content.innerHTML=
-    (owners.length?`<div class="staff-section"><div class="staff-section-title">👑 Владелец</div><div class="staff-grid">${owners.map(u=>sc(u,'owner')).join('')}</div></div>`:'') +
-    (deps.length?`<div class="staff-section"><div class="staff-section-title">🥇 Заместители</div><div class="staff-grid">${deps.map(u=>sc(u,'deputy')).join('')}</div></div>`:'') +
-    (mods.length?`<div class="staff-section"><div class="staff-section-title">🛡 Модераторы</div><div class="staff-grid">${mods.map(u=>sc(u,'moder')).join('')}</div></div>`:'') +
-    (!owners.length&&!deps.length&&!mods.length?`<div class="empty"><div class="ei">👥</div><h3>Staff ещё не назначен</h3></div>`:'');
-}
-
-// ── GIVEAWAYS ─────────────────────────────────────────────────────────────────
-function renderGiveaways(){
-  const adminBtn=document.getElementById('giveAdminBtn');
-  if(adminBtn)adminBtn.innerHTML=isDeputy()?`<button class="btn bgr" onclick="oOv('newGiveOv')">➕ Новый розыгрыш</button>`:'';
-  const g=document.getElementById('giveGrid');
-  if(!localGiveaways.length){g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="ei">🎁</div><h3>Розыгрышей пока нет</h3><p>Следи за обновлениями!</p></div>`;return;}
-  g.innerHTML=localGiveaways.sort((a,b)=>(b.ts||0)-(a.ts||0)).map(gw=>{
-    const now=Date.now();const isActive=!gw.ended&&(!gw.endTs||gw.endTs>now);
-    const parts=gw.participants||[];const joined=cu&&parts.includes(cu.id);
-    const endStr=gw.endTs?new Date(gw.endTs).toLocaleDateString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Бессрочно';
-    return `<div class="give-card${isActive?' active':' ended'}">
-      <div class="give-banner">${gw.emoji||'🎁'}</div>
-      <div class="give-body">
-        <div style="margin-bottom:8px;"><span class="give-status ${isActive?'give-active':'give-ended'}">${isActive?'🟢 Активен':'⛔ Завершён'}</span></div>
-        <div class="give-title">${gw.title}</div>
-        <div style="font-size:13px;color:var(--m);line-height:1.55;margin-bottom:10px;">${gw.desc}</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--m);margin-bottom:12px;"><span>📅 ${endStr}</span><span>👥 ${parts.length} уч.</span><span>👤 от ${gw.author||'?'}</span></div>
-        ${gw.winnerId?`<div style="padding:10px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.2);border-radius:10px;font-size:13px;color:var(--ok);margin-bottom:8px;">🏆 Победитель: <b>${gw.winnerName||'?'}</b></div>`:''}
-        ${isActive&&cu?`<button class="btn ${joined?'give-joined':''} give-btn-join ${joined?'':'bpr'}" onclick="joinGiveaway('${gw.id}')" ${joined?'disabled':''}>${joined?'✅ Ты участвуешь':'🎯 Участвовать'}</button>`:(!cu&&isActive?`<button class="btn bgh give-btn-join" onclick="showAuth()">🔐 Войти для участия</button>`:'')}
-        ${isDeputy()&&isActive?`<button class="btn bdn bsm" style="margin-top:8px;width:100%;justify-content:center;" onclick="endGiveaway('${gw.id}')">🏆 Завершить и выбрать победителя</button>`:''}
-        ${isDeputy()?`<button class="btn bgh bsm" style="margin-top:6px;width:100%;justify-content:center;" onclick="delGiveaway('${gw.id}')">🗑 Удалить</button>`:''}
-      </div>
-    </div>`;
-  }).join('');
-}
-async function createGiveaway(){
-  if(!isDeputy()){notify('Нет доступа!','err');return;}
-  const emoji=document.getElementById('giveEmoji').value||'🎁';
-  const title=document.getElementById('giveTitle').value.trim();
-  const desc=document.getElementById('giveDesc').value.trim();
-  const endVal=document.getElementById('giveEnd').value;
-  if(!title||!desc){notify('Заполните все поля!','err');return;}
-  const data={emoji,title,desc,endTs:endVal?new Date(endVal).getTime():null,author:cu.name,ts:Date.now(),participants:[],ended:false};
-  const newId=await fsAdd('giveaways',data);if(!newId){notify('Ошибка!','err');return;}
-  localGiveaways.unshift({id:newId,...data});
-  document.getElementById('giveEmoji').value='🎁';document.getElementById('giveTitle').value='';document.getElementById('giveDesc').value='';document.getElementById('giveEnd').value='';
-  cOvId('newGiveOv');renderGiveaways();notify('🎁 Розыгрыш создан!','ok');
-}
-async function joinGiveaway(id){
-  if(!cu){showAuth();return;}
-  const gw=localGiveaways.find(x=>x.id===id);if(!gw)return;
-  if((gw.participants||[]).includes(cu.id)){notify('Ты уже участвуешь!','err');return;}
-  gw.participants=[...(gw.participants||[]),cu.id];
-  await fsUpdate('giveaways',id,{participants:gw.participants});
-  renderGiveaways();notify('🎯 Ты участвуешь!','ok');
-}
-async function endGiveaway(id){
-  const gw=localGiveaways.find(x=>x.id===id);if(!gw)return;
-  const parts=gw.participants||[];if(!parts.length){notify('Нет участников!','err');return;}
-  const winnerId=parts[Math.floor(Math.random()*parts.length)];
-  const winner=localUsers.find(u=>u.id===winnerId)||{name:winnerId,un:winnerId};
-  await fsUpdate('giveaways',id,{ended:true,winnerId,winnerName:winner.name});
-  gw.ended=true;gw.winnerId=winnerId;gw.winnerName=winner.name;
-  await addNotification(winnerId,`🎉 Ты выиграл в розыгрыше "${gw.title}"! Свяжись с администратором.`,'ok');
-  document.getElementById('giveWinnerBody').innerHTML=`<div style="text-align:center;padding:10px 0 20px;"><div style="font-size:52px;margin-bottom:16px;">🎉</div><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;">${winner.name}</div><div style="font-size:14px;color:var(--m);margin-bottom:16px;">@${winner.un||'?'}</div><div style="padding:12px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.2);border-radius:10px;font-size:13px;color:var(--ok);">🏆 Победитель уведомлён!</div></div>`;
-  oOv('giveWinnerOv');renderGiveaways();notify(`🏆 Победитель: ${winner.name}!`,'ok');
-}
-async function delGiveaway(id){await fsDel('giveaways',id);localGiveaways=localGiveaways.filter(x=>x.id!==id);renderGiveaways();notify('🗑 Удалён','err');}
-
-// ── MODALS ────────────────────────────────────────────────────────────────────
-function oOv(id){document.getElementById(id).classList.remove('hidden');document.body.style.overflow='hidden';}
-function cOvId(id){document.getElementById(id).classList.add('hidden');document.body.style.overflow='';}
-function cOv(e,id){if(e.target===document.getElementById(id))cOvId(id);}
-
-// ── NOTIFY ────────────────────────────────────────────────────────────────────
-let ntT=null;
-function notify(msg,type){
-  const el=document.getElementById('ntf');el.textContent=msg;el.className='ntf '+(type||'ok');el.classList.remove('hidden');
-  if(ntT)clearTimeout(ntT);ntT=setTimeout(()=>el.classList.add('hidden'),4500);
-}
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function stCls(s){return s==='pending'?'sbp':s==='approved'?'sba':'sbr';}
-function stTx(s){return s==='pending'?'⏳ Ожидает':s==='approved'?'✅ Одобрена':'❌ Отклонена';}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-updateNav();
-if(window._firebaseReady){
-  loadData();
-}else{
-  document.addEventListener('firebaseReady',()=>loadData(),{once:true});
-}
-</script>
-</body>
-  </html>
+  
