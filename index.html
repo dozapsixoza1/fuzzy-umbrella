@@ -1448,7 +1448,7 @@ async function showProf(id){
   oOv('profOv');
 }
 
-// ── COMMENTS ─────────────────────────────────────────────────────────────────
+  // ── COMMENTS ─────────────────────────────────────────────────────────────────
 function renderCommentsHtml(comments,catId){
   const roots=comments.filter(c=>!c.parentId).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const replies=comments.filter(c=>c.parentId);
@@ -1632,7 +1632,7 @@ function showMyApps(){
   oOv('myAppsOv');
 }
 
-    // ── SHOP ──────────────────────────────────────────────────────────────────────
+// ── SHOP ──────────────────────────────────────────────────────────────────────
 function renderShop(){
   const pur=cu?cu.purchases||[]:[];
   const coins=cu?cu.coins||0:0;
@@ -2147,7 +2147,7 @@ if(window._firebaseReady){
 <script>eruda.init();</script>
 
 <!-- Twemoji: превращает нативные эмодзи в красивые SVG-иконки -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 <script>
   function parseEmoji(){
     if(typeof twemoji==='undefined'){
@@ -2156,6 +2156,7 @@ if(window._firebaseReady){
     }
     try{
       twemoji.parse(document.body, {
+        base: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.0.2/assets/',
         folder: 'svg',
         ext: '.svg',
         className: 'twemoji'
