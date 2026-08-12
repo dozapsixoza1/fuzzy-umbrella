@@ -717,7 +717,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>
       Войти
     </button>
-    <button class="btn bgh bsm" onclick="openSettings()">🎨</button>
+    <button class="btn bgh bsm" onclick="openSettings()">🎨 Тема</button>
   </div>
 </nav>
 
@@ -1358,29 +1358,29 @@ function updateNav(){
     const verifIco=isVerif?`<span class="vico">✓</span>`:'';
     const unread=notifications.filter(n=>!n.read).length;
     nr.innerHTML=`
-      <button class="btn bgh bsm" onclick="showPostsPage()">📰</button>
-      <button class="btn bgh bsm" onclick="showChatPage()">💬</button>
-      <button class="btn bgh bsm" onclick="showTopPage()">🏆</button>
-      <button class="btn bgh bsm" onclick="showStaffPage()">👑</button>
-      <button class="btn bgh bsm" onclick="showGivePage()">🎁</button>
+      <button class="btn bgh bsm" onclick="showPostsPage()">📰 Посты</button>
+      <button class="btn bgh bsm" onclick="showChatPage()">💬 Чат</button>
+      <button class="btn bgh bsm" onclick="showTopPage()">🏆 Топ</button>
+      <button class="btn bgh bsm" onclick="showStaffPage()">👑 Staff</button>
+      <button class="btn bgh bsm" onclick="showGivePage()">🎁 Розыгрыши</button>
       <div class="nav-coins">🪙 ${cu.coins||0}</div>
-      <button class="btn bgh bsm" onclick="showShopPage()">🛒</button>
+      <button class="btn bgh bsm" onclick="showShopPage()">🛒 Магазин</button>
       <div class="notif-bell" id="notifBellBtn" onclick="toggleNotifPanel()">
-        <button class="btn bgh bsm">🔔</button>
+        <button class="btn bgh bsm">🔔 Уведомления</button>
         <div class="notif-dot${unread>0?' show':''}" id="notifDot"></div>
       </div>
       <div class="ub" onclick="showUserProfile('${cu.id}')"><div class="uav">${avH}</div><span style="max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cu.name}</span>${verifIco}<span class="rb ${rc}">${rn}</span></div>
-      ${isModer()?`<button class="btn bgh bsm" onclick="showAdmin()">⚙️</button>`:''}
-      <button class="btn bgh bsm" onclick="showAppPage()">📝</button>
-      <button class="btn bgh bsm" onclick="openSettings()">🎨</button>
-      <button class="btn bdn bsm" onclick="logout()">↩</button>`;
+      ${isModer()?`<button class="btn bgh bsm" onclick="showAdmin()">⚙️ Панель</button>`:''}
+      <button class="btn bgh bsm" onclick="showAppPage()">📝 Заявка</button>
+      <button class="btn bgh bsm" onclick="openSettings()">🎨 Тема</button>
+      <button class="btn bdn bsm" onclick="logout()">↩ Выйти</button>`;
     if(ha) ha.innerHTML=`<button class="btn bpr blg" onclick="showAppPage()">📝 Подать заявку</button><button class="btn bgh blg" onclick="scrollCat()">Смотреть каталог</button>${isModer()?`<button class="btn bgr blg" onclick="showAdmin()">⚙️ Панель</button>`:''}`;
   }else{
     nr.innerHTML=`
       <button class="btn bgh bsm" onclick="showPostsPage()">📰 Посты</button>
       <button class="btn bgh bsm" onclick="showStaffPage()">👑 Staff</button>
       <button class="btn btg bsm" onclick="showAuth()">${tgSVG} Войти</button>
-      <button class="btn bgh bsm" onclick="openSettings()">🎨</button>`;
+      <button class="btn bgh bsm" onclick="openSettings()">🎨 Тема</button>`;
     if(ha) ha.innerHTML=`<button class="btn btg blg" onclick="showAuth()">${tgSVG} Войти через Telegram</button><button class="btn bgh blg" onclick="scrollCat()">Смотреть каталог</button>`;
   }
 }
@@ -2310,11 +2310,7 @@ if(window._firebaseReady){
     catch(e){ console.warn('icon replace failed',e); }
   }
   loadSprite().then(parseEmoji);
-  let emojiDebounce=null;
-  const emojiObserver=new MutationObserver(()=>{
-    clearTimeout(emojiDebounce);
-    emojiDebounce=setTimeout(parseEmoji,80);
-  });
+  const emojiObserver=new MutationObserver(()=>{ parseEmoji(); });
   emojiObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
 </script>
 </body>
