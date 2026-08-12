@@ -2310,7 +2310,15 @@ if(window._firebaseReady){
     catch(e){ console.warn('icon replace failed',e); }
   }
   loadSprite().then(parseEmoji);
-  const emojiObserver=new MutationObserver(()=>{ parseEmoji(); });
+  const emojiObserver=new MutationObserver((mutations)=>{
+    for(const mut of mutations){
+      if(mut.type==='childList'){
+        mut.addedNodes.forEach(n=>walkAndReplace(n));
+      }else if(mut.type==='characterData'){
+        walkAndReplace(mut.target);
+      }
+    }
+  });
   emojiObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
 </script>
 </body>
