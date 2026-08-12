@@ -111,6 +111,48 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;height:64px;padding:0 24px;
 @keyframes lpa{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.3;transform:scale(.5);}}
 .navr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:1;}
 
+/* ── БУРГЕР-МЕНЮ (мобилка) ─── */
+.navBurger{display:none;width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  align-items:center;justify-content:center;cursor:pointer;background:transparent;
+  border:1px solid var(--b);position:relative;z-index:210;transition:border-color .2s,background .2s;}
+.navBurger:hover{border-color:var(--a3);background:rgba(123,97,255,.08);}
+.navBurger .bln{display:block;width:18px;height:2px;background:var(--t);border-radius:2px;position:relative;transition:background .25s;}
+.navBurger .bln::before,.navBurger .bln::after{content:'';position:absolute;left:0;width:18px;height:2px;
+  background:var(--t);border-radius:2px;transition:transform .32s cubic-bezier(.4,0,.2,1),top .32s cubic-bezier(.4,0,.2,1),opacity .2s;}
+.navBurger .bln::before{top:-6px;}
+.navBurger .bln::after{top:6px;}
+.navBurger.active .bln{background:transparent;}
+.navBurger.active .bln::before{top:0;transform:rotate(45deg);}
+.navBurger.active .bln::after{top:0;transform:rotate(-45deg);}
+
+@media(max-width:900px){
+  .navBurger{display:flex;}
+  .navr{position:fixed;top:64px;left:0;right:0;flex-direction:column;align-items:stretch;
+    justify-content:flex-start;background:rgba(7,10,18,.98);backdrop-filter:blur(26px);
+    border-bottom:1px solid rgba(255,255,255,.06);box-shadow:0 18px 40px rgba(0,0,0,.5);
+    padding:8px 14px 16px;max-height:0;opacity:0;pointer-events:none;overflow:hidden;
+    transition:max-height .38s cubic-bezier(.4,0,.2,1),opacity .28s ease;gap:6px;}
+  .navr.open{max-height:calc(100vh - 64px);opacity:1;pointer-events:auto;overflow-y:auto;}
+  .navr>*{opacity:0;transform:translateY(-8px);}
+  .navr.open>*{animation:navItemIn .38s cubic-bezier(.4,0,.2,1) forwards;}
+  .navr.open>*:nth-child(1){animation-delay:.02s;}
+  .navr.open>*:nth-child(2){animation-delay:.05s;}
+  .navr.open>*:nth-child(3){animation-delay:.08s;}
+  .navr.open>*:nth-child(4){animation-delay:.11s;}
+  .navr.open>*:nth-child(5){animation-delay:.14s;}
+  .navr.open>*:nth-child(6){animation-delay:.17s;}
+  .navr.open>*:nth-child(7){animation-delay:.20s;}
+  .navr.open>*:nth-child(8){animation-delay:.23s;}
+  .navr.open>*:nth-child(9){animation-delay:.26s;}
+  .navr.open>*:nth-child(10){animation-delay:.29s;}
+  .navr.open>*:nth-child(11){animation-delay:.32s;}
+  .navr.open>*:nth-child(12){animation-delay:.35s;}
+  .navr .btn,.navr .nav-coins,.navr .notif-bell,.navr .ub{width:100%;justify-content:flex-start;box-sizing:border-box;}
+  .navr .btn{padding:13px 14px;font-size:14.5px;}
+  .navr .ub{padding:11px 6px;}
+}
+@keyframes navItemIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
 /* ── COINS ─── */
 .nav-coins{display:flex;align-items:center;gap:5px;padding:5px 12px;
   background:rgba(255,215,0,.07);border:1px solid rgba(255,215,0,.22);border-radius:10px;
@@ -669,6 +711,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="logo" onclick="goHome()">
     <span class="ln">TK</span><div class="lp"></div><span class="lx">Fame</span>
   </div>
+  <button class="navBurger" id="navBurger" onclick="toggleMobileNav()" aria-label="Меню"><span class="bln"></span></button>
   <div class="navr" id="navR">
     <button class="btn btg bsm" onclick="showAuth()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>
@@ -1277,6 +1320,31 @@ function hasPurchase(uid,itemId){return getUserPurchases(uid).includes(itemId);}
 // ── NAV ───────────────────────────────────────────────────────────────────────
 const tgSVG=`<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248l-2.008 9.46c-.148.664-.543.825-1.1.514l-3.033-2.233-1.465 1.41c-.162.162-.299.299-.613.299l.218-3.088 5.63-5.083c.245-.216-.055-.336-.378-.12L6.94 14.02 3.96 13.07c-.65-.205-.663-.65.136-.962L17.67 7.29c.54-.194 1.013.132.892.958z"/></svg>`;
 
+// ── МОБИЛЬНОЕ БУРГЕР-МЕНЮ ───────────────────────────────────────────
+function toggleMobileNav(){
+  const nr=document.getElementById('navR'),bg=document.getElementById('navBurger');
+  const open=nr.classList.toggle('open');
+  bg.classList.toggle('active',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function closeMobileNav(){
+  const nr=document.getElementById('navR'),bg=document.getElementById('navBurger');
+  nr.classList.remove('open');bg.classList.remove('active');
+  document.body.style.overflow='';
+}
+document.addEventListener('click',(e)=>{
+  const nr=document.getElementById('navR'),bg=document.getElementById('navBurger');
+  if(!nr||!nr.classList.contains('open'))return;
+  if(nr.contains(e.target)||bg.contains(e.target))return;
+  closeMobileNav();
+});
+document.addEventListener('click',(e)=>{
+  const nr=document.getElementById('navR');
+  if(!nr||!nr.classList.contains('open'))return;
+  if(e.target.closest('.navr .btn, .navr .ub, .navr .notif-bell')) closeMobileNav();
+});
+window.addEventListener('resize',()=>{ if(window.innerWidth>900) closeMobileNav(); });
+
 function updateNav(){
   const nr=document.getElementById('navR'),ha=document.getElementById('heroActs');
   updStats();
@@ -1448,7 +1516,7 @@ async function showProf(id){
   oOv('profOv');
 }
 
-  // ── COMMENTS ─────────────────────────────────────────────────────────────────
+      // ── COMMENTS ─────────────────────────────────────────────────────────────────
 function renderCommentsHtml(comments,catId){
   const roots=comments.filter(c=>!c.parentId).sort((a,b)=>(a.ts||0)-(b.ts||0));
   const replies=comments.filter(c=>c.parentId);
@@ -2142,39 +2210,79 @@ if(window._firebaseReady){
   document.addEventListener('firebaseReady',()=>{loadData();initAuthListener();},{once:true});
 }
 </script>
-<!-- ВРЕМЕННО: консоль для диагностики с телефона. Удали после того как разберёмся с эмодзи -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
-
-<!-- Twemoji: превращает нативные эмодзи в красивые SVG-иконки -->
-<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
+<!-- Lucide-иконки вместо эмодзи, окрашены под неоновую тему сайта -->
+<style>
+.lucide-emoji{width:1.05em;height:1.05em;display:inline-block;vertical-align:-0.18em;color:var(--a);flex-shrink:0;}
+.lucide-emoji[data-slug="crown"],
+.lucide-emoji[data-slug="trophy"],
+.lucide-emoji[data-slug="medal"],
+.lucide-emoji[data-slug="star"]{color:var(--gold);}
+.lucide-emoji[data-slug="shield"]{color:var(--mod);}
+.lucide-emoji[data-slug="skull"]{color:var(--err);}
+.lucide-emoji[data-slug="gift"],
+.lucide-emoji[data-slug="sparkles"]{color:var(--a2);}
+.lucide-emoji[data-slug="check-circle"]{color:var(--ok);}
+.lucide-emoji[data-slug="x-circle"],
+.lucide-emoji[data-slug="x"]{color:var(--err);}
+</style>
 <script>
-  function parseEmoji(){
-    if(typeof twemoji==='undefined'){
-      showDebugBadge('❌ twemoji НЕ загрузился');
-      return;
-    }
-    try{
-      twemoji.parse(document.body, {
-        base: 'https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.0.2/assets/',
-        folder: 'svg',
-        ext: '.svg',
-        className: 'twemoji'
-      });
-      showDebugBadge('✅ twemoji работает');
-    }catch(e){
-      showDebugBadge('⚠️ twemoji ошибка: '+e.message);
+  const EMOJI_ICON_MAP = {
+    '👋':'hand','✨':'sparkles','🔐':'lock-keyhole','🎨':'palette','🤖':'bot',
+    '📁':'folder','🖼️':'image','👁':'eye','📤':'upload','🛒':'shopping-cart',
+    '🪙':'coins','🏪':'store','📋':'clipboard-list','📚':'book-open','📰':'newspaper',
+    '👥':'users','🥇':'medal','🛡':'shield','✕':'x','🎁':'gift','🏆':'trophy',
+    '👑':'crown','📅':'calendar','📆':'calendar-days','🗓':'calendar-days','♾':'infinity',
+    '❌':'x-circle','🔒':'lock','🎵':'music','🎮':'gamepad-2','▶️':'play',
+    '📌':'pin','➤':'arrow-right','➔':'arrow-right','←':'arrow-left','✅':'check-circle',
+    '⭐':'star','🌸':'flower-2','📝':'pen-line','✍️':'pen-line','🖋️':'pen-line',
+    '🎙️':'mic','💀':'skull','🌟':'sparkles','🔔':'bell','⚙️':'settings'
+  };
+  const LUCIDE_SPRITE='https://cdn.jsdelivr.net/npm/lucide-static@latest/sprite.svg';
+  const emojiKeys=Object.keys(EMOJI_ICON_MAP).sort((a,b)=>b.length-a.length);
+  const emojiRegex=new RegExp('('+emojiKeys.map(e=>e.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gu');
+
+  function makeIcon(slug){
+    const svgNS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgNS,'svg');
+    svg.setAttribute('class','lucide-emoji');
+    svg.setAttribute('data-slug',slug);
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('fill','none');
+    svg.setAttribute('stroke','currentColor');
+    svg.setAttribute('stroke-width','2');
+    svg.setAttribute('stroke-linecap','round');
+    svg.setAttribute('stroke-linejoin','round');
+    const use=document.createElementNS(svgNS,'use');
+    use.setAttributeNS('http://www.w3.org/1999/xlink','href',LUCIDE_SPRITE+'#'+slug);
+    use.setAttribute('href',LUCIDE_SPRITE+'#'+slug);
+    svg.appendChild(use);
+    return svg;
+  }
+
+  function walkAndReplace(node){
+    if(node.nodeType===3){
+      const text=node.nodeValue;
+      emojiRegex.lastIndex=0;
+      if(!emojiRegex.test(text))return;
+      emojiRegex.lastIndex=0;
+      const frag=document.createDocumentFragment();
+      let last=0,m;
+      while((m=emojiRegex.exec(text))){
+        if(m.index>last)frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+        frag.appendChild(makeIcon(EMOJI_ICON_MAP[m[0]]));
+        last=m.index+m[0].length;
+      }
+      if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));
+      if(node.parentNode)node.parentNode.replaceChild(frag,node);
+    }else if(node.nodeType===1){
+      const tag=node.tagName;
+      if(tag==='SCRIPT'||tag==='STYLE'||tag==='SVG'||node.classList?.contains('lucide-emoji'))return;
+      Array.from(node.childNodes).forEach(walkAndReplace);
     }
   }
-  function showDebugBadge(text){
-    let b=document.getElementById('emojiDebugBadge');
-    if(!b){
-      b=document.createElement('div');
-      b.id='emojiDebugBadge';
-      b.style.cssText='position:fixed;top:8px;left:8px;z-index:2147483647;background:#000;color:#0f0;padding:8px 14px;font-size:13px;border-radius:6px;font-family:monospace;box-shadow:0 0 12px rgba(0,0,0,.6);';
-      document.body.appendChild(b);
-    }
-    b.textContent=text;
+  function parseEmoji(){
+    try{ walkAndReplace(document.body); }
+    catch(e){ console.warn('icon replace failed',e); }
   }
   parseEmoji();
   let emojiDebounce=null;
