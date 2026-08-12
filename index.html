@@ -1725,7 +1725,7 @@ function renderShop(){
   }).join('');
 }
 
-  function confirmBuy(itemId){
+function confirmBuy(itemId){
   if(!cu){notify('Войдите!','err');return;}
   const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
   const coins=cu.coins||0;
@@ -2240,8 +2240,30 @@ if(window._firebaseReady){
   const LUCIDE_SPRITE='https://cdn.jsdelivr.net/npm/lucide-static@latest/sprite.svg';
   const emojiKeys=Object.keys(EMOJI_ICON_MAP).sort((a,b)=>b.length-a.length);
   const emojiRegex=new RegExp('('+emojiKeys.map(e=>e.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')','gu');
+  let spriteReady=false;
+
+  // Кросс-доменные <use href="domain#id"> не работают в большинстве браузеров (блокируется
+  // из соображений безопасности). Поэтому скачиваем спрайт и встраиваем его прямо в страницу —
+  // тогда ссылки становятся локальными (#id) и работают везде.
+  async function loadSprite(){
+    try{
+      const res=await fetch(LUCIDE_SPRITE);
+      if(!res.ok)throw new Error('sprite fetch failed: '+res.status);
+      const svgText=await res.text();
+      const holder=document.createElement('div');
+      holder.style.cssText='position:absolute;width:0;height:0;overflow:hidden;';
+      holder.setAttribute('aria-hidden','true');
+      holder.innerHTML=svgText;
+      document.body.insertBefore(holder,document.body.firstChild);
+      spriteReady=true;
+    }catch(e){
+      console.warn('lucide sprite load failed, keeping native emoji',e);
+      spriteReady=false;
+    }
+  }
 
   function makeIcon(slug,fallbackChar){
+    if(!spriteReady)return document.createTextNode(fallbackChar);
     const svgNS='http://www.w3.org/2000/svg';
     const svg=document.createElementNS(svgNS,'svg');
     svg.setAttribute('class','lucide-emoji');
@@ -2253,17 +2275,12 @@ if(window._firebaseReady){
     svg.setAttribute('stroke-linecap','round');
     svg.setAttribute('stroke-linejoin','round');
     const use=document.createElementNS(svgNS,'use');
-    use.setAttributeNS('http://www.w3.org/1999/xlink','href',LUCIDE_SPRITE+'#'+slug);
-    use.setAttribute('href',LUCIDE_SPRITE+'#'+slug);
+    use.setAttribute('href','#'+slug);
     svg.appendChild(use);
-    // если иконка не отрисовалась (символ не найден) — откатываемся на исходный эмодзи
-    setTimeout(()=>{
-      try{
-        if(svg.getBBox().width===0){
-          svg.replaceWith(document.createTextNode(fallbackChar));
-        }
-      }catch(e){}
-    },400);
+    // если конкретного символа в спрайте не оказалось — откат на исходный эмодзи
+    if(!document.getElementById(slug)){
+      return document.createTextNode(fallbackChar);
+    }
     return svg;
   }
 
@@ -2292,7 +2309,7 @@ if(window._firebaseReady){
     try{ walkAndReplace(document.body); }
     catch(e){ console.warn('icon replace failed',e); }
   }
-  parseEmoji();
+  loadSprite().then(parseEmoji);
   let emojiDebounce=null;
   const emojiObserver=new MutationObserver(()=>{
     clearTimeout(emojiDebounce);
