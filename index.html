@@ -429,6 +429,24 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 .fcolor-pick .fcolor-dot{width:26px;height:26px;cursor:pointer;transition:transform .15s;}
 .fcolor-pick .fcolor-dot:hover{transform:scale(1.15);}
 .fcolor-pick .fcolor-dot.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--t);}
+.fsort-btn.on{background:var(--a);color:#000;border-color:var(--a);}
+
+/* ── ТЕХ.РАБОТЫ ─── */
+.maint-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;
+  flex-direction:column;text-align:center;padding:24px;}
+.maint-overlay .mo-ic{font-size:56px;margin-bottom:18px;animation:maintSpin 2.2s ease-in-out infinite;}
+@keyframes maintSpin{0%,100%{transform:rotate(-8deg);}50%{transform:rotate(8deg);}}
+.maint-overlay h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:10px;}
+.maint-overlay p{color:var(--m);font-size:15px;max-width:440px;line-height:1.6;}
+.maint-banner{position:fixed;top:0;left:0;right:0;z-index:9998;background:linear-gradient(90deg,#ff9500,#ff3cac);
+  color:#000;font-weight:700;font-size:13px;padding:9px 16px;display:flex;align-items:center;justify-content:center;gap:12px;}
+.maint-banner button{background:rgba(0,0,0,.2);border:none;color:#000;font-weight:700;padding:4px 10px;border-radius:7px;cursor:pointer;font-size:12px;}
+.switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;}
+.switch .slider{position:absolute;cursor:pointer;inset:0;background:var(--s2);border:1px solid var(--b);border-radius:26px;transition:.2s;}
+.switch .slider::before{content:'';position:absolute;height:18px;width:18px;left:3px;top:3px;background:var(--m);border-radius:50%;transition:.2s;}
+.switch input:checked+.slider{background:linear-gradient(90deg,#ff9500,#ff3cac);border-color:transparent;}
+.switch input:checked+.slider::before{transform:translateX(20px);background:#fff;}
 
 /* ── PROFILE PAGE ─── */
 .prof-page{max-width:700px;margin:0 auto;padding:40px 20px 100px;}
@@ -864,7 +882,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <button class="btn bpr bsm" id="fNewTopicBtn" onclick="openNewTopicModal()">➕ Новая тема</button>
     </div>
     <div class="pgtit" id="fCatTitle">Раздел</div>
-    <div class="pgsub" id="fCatDesc" style="margin-bottom:24px;"></div>
+    <div class="pgsub" id="fCatDesc" style="margin-bottom:18px;"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
+      <input class="fi" id="forumSearchInp" placeholder="🔍 Поиск по темам..." style="flex:1;min-width:180px;" oninput="onForumSearch(this.value)"/>
+      <button class="btn bgh bsm fsort-btn on" data-mode="new" onclick="setForumSort('new');document.querySelectorAll('.fsort-btn').forEach(b=>b.classList.toggle('on',b===this))">🆕 Новые</button>
+      <button class="btn bgh bsm fsort-btn" data-mode="popular" onclick="setForumSort('popular');document.querySelectorAll('.fsort-btn').forEach(b=>b.classList.toggle('on',b===this))">🔥 Обсуждаемые</button>
+      <button class="btn bgh bsm fsort-btn" data-mode="likes" onclick="setForumSort('likes');document.querySelectorAll('.fsort-btn').forEach(b=>b.classList.toggle('on',b===this))">❤️ Лайки</button>
+    </div>
     <div id="forumTopicsList"><div class="lder"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
   </div>
 </div>
@@ -1003,6 +1027,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <div class="ai" id="sCat" onclick="aTab('cat',this)">📚 Каталог</div>
       <div class="ai" id="sPosts" onclick="aTab('posts',this)">📰 Посты</div>
       <div class="ai" id="sForum" onclick="aTab('forum',this)">💬 Форум</div>
+      <div class="ai" id="sMaint" onclick="aTab('maint',this)">🔧 Тех.Работы</div>
       <div class="albl">Сообщество</div>
       <div class="ai" id="sUsers" onclick="aTab('users',this)">👥 Пользователи</div>
       <div class="ai" id="sDeputies" onclick="aTab('deputies',this)">🥇 Заместители</div>
@@ -1056,6 +1081,22 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
         </div>
         <div class="utab" id="forumRankTab"></div>
       </div>
+      <div id="tMaint" style="display:none;">
+        <div class="ahd"><div class="aptit">🔧 Тех.Работы</div></div>
+        <div class="fcard">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div>
+              <div style="font-weight:700;margin-bottom:4px;">Закрыть сайт на обновление</div>
+              <div style="font-size:13px;color:var(--m);">Обычные пользователи увидят экран "Технические работы" и не смогут пользоваться сайтом. Владелец и заместители сохранят доступ.</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="maintToggle"/><span class="slider"></span></label>
+          </div>
+          <div class="fg"><label class="fl">Сообщение для пользователей</label>
+            <textarea class="fi" id="maintMsgInp" rows="3" placeholder="Мы обновляем сайт. Скоро вернёмся, спасибо за терпение!"></textarea>
+          </div>
+          <button class="btn bpr" onclick="saveMaintenance()" style="width:100%;">💾 Сохранить</button>
+        </div>
+      </div>
       <div id="tUsers" style="display:none;">
         <div class="ahd"><div class="aptit">👥 Пользователи</div></div>
         <div class="utab" id="usrTab"></div>
@@ -1094,6 +1135,13 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <div class="fg"><label class="fl">Текст</label><textarea class="fi" id="ntBody" rows="6" placeholder="Опишите подробнее..."></textarea></div>
       <button class="btn bpr" onclick="createForumTopic()" style="width:100%;">Создать тему</button>
     </div>
+  </div>
+</div>
+
+<div class="ov hidden" id="forumProfOv" onclick="cOv(event,'forumProfOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">Профиль на форуме</div><button class="mx" onclick="cOvId('forumProfOv')">✕</button></div>
+    <div class="mbody" id="forumProfBody"></div>
   </div>
 </div>
 
@@ -1260,6 +1308,17 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 
 <div id="ntf" class="ntf hidden"></div>
 
+<!-- ТЕХ.РАБОТЫ -->
+<div class="maint-banner hidden" id="maintBanner">
+  🔧 Включён режим технических работ — обычные пользователи не могут зайти на сайт
+  <button onclick="quickDisableMaintenance()">Выключить</button>
+</div>
+<div class="maint-overlay hidden" id="maintOverlay">
+  <div class="mo-ic">🔧</div>
+  <h1>Технические работы</h1>
+  <p id="maintMsgText">Мы обновляем сайт. Скоро вернёмся, спасибо за терпение!</p>
+</div>
+
 <script>
 // ── SNOW ──────────────────────────────────────────────────────────────────────
 (function(){
@@ -1279,7 +1338,7 @@ setTimeout(()=>{const ov=document.getElementById('welcomeOv');if(ov)closeWelcome
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const SA='psychokaratel';
-let cu=null,cf='all',b64=null,postImgB64=null;
+let cu=null,cf='all',b64=null,postImgB64=null,siteSettings={maintenance:false,maintenanceMsg:''};
 let localCat=[],localApps=[],localUsers=[],localPosts=[],localGiveaways=[],localForumCat=[];
 let curForumTopic=null,curForumCatId=null;
 let chatUnsubscribe=null;
@@ -1351,6 +1410,9 @@ async function loadData(){
   [localCat,localApps,localUsers,localPosts,localGiveaways,localForumCat]=await Promise.all([
     fsGetAll('catalog'),fsGetAll('apps'),fsGetAll('users'),fsGetAll('posts'),fsGetAll('giveaways'),fsGetAll('forumCategories')
   ]);
+  const s=await fsGetDoc('settings','site');
+  siteSettings=s||{maintenance:false,maintenanceMsg:''};
+  checkMaintenanceMode();
   renderCards();
   updStats();
   if(cu) loadNotifications();
@@ -1429,6 +1491,7 @@ function initAuthListener(){
       let u=await fsGetDoc('users',fbUser.uid);
       if(u){cu=u;await loadNotifications();updateNav();}
     }
+    checkMaintenanceMode();
   });
 }
 
@@ -2089,7 +2152,7 @@ function renderChatMsg(msg,isMine){
 function showAdmin(){if(!isModer()){notify('Нет доступа!','err');return;}showPage('adminPage');aTab('apps',document.getElementById('sApps'));}
 function aTab(tab,el){
   document.querySelectorAll('.ai').forEach(s=>s.classList.remove('on'));el.classList.add('on');
-  ['tApps','tCat','tPosts','tForum','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
+  ['tApps','tCat','tPosts','tForum','tMaint','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
   if(tab==='apps'){document.getElementById('tApps').style.display='block';renderAdmStats();renderAdmApps('pending');}
   if(tab==='cat'&&isDeputy()){document.getElementById('tCat').style.display='block';renderAdmCat();}
   if(tab==='posts'&&isDeputy()){document.getElementById('tPosts').style.display='block';renderAdmPosts();}
@@ -2102,6 +2165,7 @@ function aTab(tab,el){
   if(tab==='users'&&isAdmin()){document.getElementById('tUsers').style.display='block';renderUsers();}
   if(tab==='deputies'&&isAdmin()){document.getElementById('tDeputies').style.display='block';renderDeputies();}
   if(tab==='moders'&&isAdmin()){document.getElementById('tModers').style.display='block';renderMods();}
+  if(tab==='maint'&&isDeputy()){document.getElementById('tMaint').style.display='block';renderMaintAdmin();}
 }
 function renderAdmStats(){
   const p=localApps.filter(a=>a.st==='pending').length;document.getElementById('appCt').textContent=p;
@@ -2328,9 +2392,11 @@ function forumBadge(u){
   if(!u||!u.forumRank)return'';
   return`<span class="frank" style="--fcolor:${u.forumColor||'var(--a)'};">${escHtml(u.forumRank)}</span>`;
 }
-function fUserAvHtml(u,cls){
+function fUserAvHtml(u,cls,clickable){
+  const click=clickable!==false;
+  const oc=(click&&u)?` onclick="event.stopPropagation();openForumProfile('${u.id}')" style="cursor:pointer;"`:'';
   if(!u)return`<div class="${cls}">?</div>`;
-  return u.av?`<div class="${cls}"><img src="${u.av}" alt=""></div>`:`<div class="${cls}">${(u.name||'?').charAt(0).toUpperCase()}</div>`;
+  return u.av?`<div class="${cls}"${oc}><img src="${u.av}" alt=""></div>`:`<div class="${cls}"${oc}>${(u.name||'?').charAt(0).toUpperCase()}</div>`;
 }
 function timeAgoF(ts){
   const d=Date.now()-(ts||0);const m=Math.floor(d/60000);
@@ -2357,29 +2423,19 @@ function renderForumCategories(){
 }
 
 async function showForumCatPage(catId){
-  curForumCatId=catId;
+  curForumCatId=catId;forumSortMode='new';
   const cat=localForumCat.find(c=>c.id===catId);if(!cat)return;
   showPage('forumCatPage');updateNav();
   document.getElementById('fCatTitle').textContent=(cat.icon||'💬')+' '+cat.name;
   document.getElementById('fCatDesc').textContent=cat.desc||'';
   document.getElementById('fNewTopicBtn').style.display=cu?'inline-flex':'none';
+  const searchInp=document.getElementById('forumSearchInp');if(searchInp)searchInp.value='';
+  document.querySelectorAll('.fsort-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode==='new'));
   const list=document.getElementById('forumTopicsList');
   list.innerHTML=`<div class="lder"><div class="ld"></div><div class="ld"></div></div>`;
   const topics=await fsQuery('forumTopics','catId','==',catId);
-  topics.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0)||(b.ts||0)-(a.ts||0));
   cat._topics=topics;
-  if(!topics.length){list.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>Тем пока нет</h3><p>${cu?'Создайте первую!':'Войдите, чтобы создать тему'}</p></div>`;return;}
-  list.innerHTML=topics.map(t=>{
-    const au=localUsers.find(u=>u.id===t.authorId);
-    return`<div class="ftopic-row${t.pinned?' pinned':''}" onclick="openForumTopic('${t.id}')">
-      ${fUserAvHtml(au,'ftopic-av')}
-      <div class="ftopic-body">
-        <div class="ftopic-title">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
-        <div class="ftopic-meta"><span>${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span></div>
-      </div>
-      <div class="ftopic-stats"><div><b>${t.repliesCount||0}</b>ответов</div></div>
-    </div>`;
-  }).join('');
+  renderForumCatTopics('');
 }
 
 async function openForumTopic(topicId){
@@ -2391,20 +2447,25 @@ async function openForumTopic(topicId){
   if(!t){const all=await fsQuery('forumTopics','catId','==',curForumCatId||'');t=all.find(x=>x.id===topicId);}
   if(!t){body.innerHTML=`<div class="empty"><div class="ei">😕</div><h3>Тема не найдена</h3></div>`;return;}
   curForumTopic=t;
+  bumpTopicViews(t);
   const au=localUsers.find(u=>u.id===t.authorId);
+  const canEdit=cu&&t.authorId===cu.id;
   body.innerHTML=`
     <div class="fcard">
       <div class="ftopic-meta" style="margin-bottom:10px;">
-        <span style="font-weight:700;color:var(--t);">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span>
+        <span style="font-weight:700;color:var(--t);cursor:pointer;" onclick="openForumProfile('${t.authorId}')">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span><span>·</span><span>👁 ${t.views||0}</span>
       </div>
       <div class="pgtit" style="font-size:22px;margin-bottom:12px;">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
       <div class="freply-body">${escHtml(t.body)}</div>
-      ${isModer()?`<div style="display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;">
-        <button class="btn bgh bsm" onclick="toggleTopicPin('${t.id}')">${t.pinned?'📌 Открепить':'📌 Закрепить'}</button>
+      <div style="display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;align-items:center;">
+        <button class="btn bsm ${cu&&t.likes&&t.likes[cu.id]?'bpr':'bgh'}" id="forumLikeBtn" onclick="toggleTopicLike('${t.id}')">🤍 0</button>
+        ${canEdit?`<button class="btn bgh bsm" onclick="editForumTopicPrompt('${t.id}')">✏️ Редактировать</button>`:''}
+        ${isModer()?`<button class="btn bgh bsm" onclick="toggleTopicPin('${t.id}')">${t.pinned?'📌 Открепить':'📌 Закрепить'}</button>
         <button class="btn bgh bsm" onclick="toggleTopicLock('${t.id}')">${t.locked?'🔓 Открыть':'🔒 Закрыть'}</button>
-        <button class="btn bdn bsm" onclick="deleteForumTopic('${t.id}')">🗑 Удалить тему</button>
-      </div>`:''}
+        <button class="btn bdn bsm" onclick="deleteForumTopic('${t.id}')">🗑 Удалить тему</button>`:''}
+      </div>
     </div>`;
+  renderTopicLikeBtn();
   document.getElementById('forumReplyBox').style.display=(cu&&!t.locked)?'block':'none';
   renderForumReplies(topicId);
 }
@@ -2420,8 +2481,9 @@ async function renderForumReplies(topicId){
     return`<div class="freply">
       <div class="freply-hd">
         ${fUserAvHtml(au,'freply-av')}
-        <span class="freply-name">${escHtml(r.authorName||'?')}</span>${forumBadge(au)}
+        <span class="freply-name" style="cursor:pointer;" onclick="openForumProfile('${r.authorId}')">${escHtml(r.authorName||'?')}</span>${forumBadge(au)}
         <span class="freply-time">${timeAgoF(r.ts)}</span>
+        ${(cu&&r.authorId===cu.id)?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="editForumReplyPrompt('${r.id}','${topicId}')">✏️</button>`:''}
         ${(isModer()||(cu&&r.authorId===cu.id))?`<button class="btn bdn bsm" style="padding:3px 8px;margin-left:6px;" onclick="deleteForumReply('${r.id}','${topicId}')">🗑</button>`:''}
       </div>
       <div class="freply-body">${escHtml(r.body)}</div>
@@ -2556,6 +2618,160 @@ async function removeForumRank(id){
   u.forumRank=null;u.forumColor=null;
   await fsUpdate('users',id,{forumRank:'',forumColor:''});
   renderForumRanksAdmin();notify('Краска снята','ok');
+}
+
+// ── ОБНОВЛЕНИЕ 1: ТЕХ.РАБОТЫ ────────────────────────────────────────────────
+function checkMaintenanceMode(){
+  const overlay=document.getElementById('maintOverlay'),banner=document.getElementById('maintBanner');
+  const staff=isDeputy();
+  if(siteSettings.maintenance&&!staff){
+    document.getElementById('maintMsgText').textContent=siteSettings.maintenanceMsg||'Мы обновляем сайт. Скоро вернёмся, спасибо за терпение!';
+    overlay.classList.remove('hidden');document.body.style.overflow='hidden';
+  }else{
+    overlay.classList.add('hidden');document.body.style.overflow='';
+  }
+  banner.classList.toggle('hidden',!(siteSettings.maintenance&&staff));
+}
+function renderMaintAdmin(){
+  document.getElementById('maintToggle').checked=!!siteSettings.maintenance;
+  document.getElementById('maintMsgInp').value=siteSettings.maintenanceMsg||'';
+}
+async function saveMaintenance(){
+  const on=document.getElementById('maintToggle').checked;
+  const msg=document.getElementById('maintMsgInp').value.trim()||'Мы обновляем сайт. Скоро вернёмся, спасибо за терпение!';
+  siteSettings={maintenance:on,maintenanceMsg:msg};
+  await fsSet('settings','site',siteSettings);
+  checkMaintenanceMode();
+  notify(on?'🔧 Тех.работы включены':'✅ Тех.работы выключены',on?'err':'ok');
+}
+async function quickDisableMaintenance(){
+  siteSettings={...siteSettings,maintenance:false};
+  await fsSet('settings','site',siteSettings);
+  checkMaintenanceMode();
+  const t=document.getElementById('maintToggle');if(t)t.checked=false;
+  notify('✅ Тех.работы выключены','ok');
+}
+
+// ── ОБНОВЛЕНИЕ 2: ПРОФИЛИ НА ФОРУМЕ ─────────────────────────────────────────
+async function openForumProfile(uid){
+  const u=localUsers.find(x=>x.id===uid);if(!u)return;
+  oOv('forumProfOv');
+  const body=document.getElementById('forumProfBody');
+  body.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const [topics,replies]=await Promise.all([fsQuery('forumTopics','authorId','==',uid),fsQuery('forumReplies','authorId','==',uid)]);
+  topics.sort((a,b)=>(b.ts||0)-(a.ts||0));replies.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  body.innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+      ${fUserAvHtml(u,'prof-av',false)}
+      <div>
+        <div style="font-weight:800;font-size:18px;">${escHtml(u.name)} ${forumBadge(u)}</div>
+        <div style="font-size:13px;color:var(--m);">@${escHtml(u.un)}${u.role!=='user'?' · '+roleName(u.role):''}</div>
+        <div style="font-size:12px;color:var(--m);margin-top:2px;">На сайте с ${u.joined||'—'}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:22px;margin-bottom:20px;font-size:13px;color:var(--m);">
+      <div><b style="color:var(--t);font-size:16px;">${topics.length}</b> тем</div>
+      <div><b style="color:var(--t);font-size:16px;">${replies.length}</b> ответов</div>
+    </div>
+    <div class="aptit" style="font-size:15px;margin-bottom:10px;">Темы</div>
+    ${topics.length?topics.slice(0,10).map(t=>`<div class="ftopic-row" onclick="cOvId('forumProfOv');goToForumTopic('${t.catId}','${t.id}')">
+        <div class="ftopic-body"><div class="ftopic-title">${escHtml(t.title)}</div>
+        <div class="ftopic-meta"><span>${timeAgoF(t.ts)}</span><span>· ${t.repliesCount||0} ответов</span></div></div>
+      </div>`).join(''):'<div style="color:var(--m);font-size:13px;margin-bottom:12px;">Пока нет тем</div>'}
+    <div class="aptit" style="font-size:15px;margin:18px 0 10px;">Последние ответы</div>
+    ${replies.length?replies.slice(0,10).map(r=>`<div class="freply" style="cursor:pointer;" onclick="cOvId('forumProfOv');openForumTopicById('${r.topicId}')">
+        <div class="freply-body">${escHtml(r.body.slice(0,140))}${r.body.length>140?'…':''}</div>
+        <div class="freply-time" style="margin-top:6px;">${timeAgoF(r.ts)}</div>
+      </div>`).join(''):'<div style="color:var(--m);font-size:13px;">Пока нет ответов</div>'}
+  `;
+}
+async function goToForumTopic(catId,topicId){curForumCatId=catId;openForumTopic(topicId);}
+async function openForumTopicById(topicId){
+  const t=await fsGetDoc('forumTopics',topicId);
+  if(!t){notify('Тема не найдена','err');return;}
+  curForumCatId=t.catId;openForumTopic(topicId);
+}
+
+// ── ОБНОВЛЕНИЕ 3: СЧЁТЧИК ПРОСМОТРОВ ТЕМ ────────────────────────────────────
+function bumpTopicViews(t){
+  t.views=(t.views||0)+1;
+  fsUpdate('forumTopics',t.id,{views:t.views});
+}
+
+// ── ОБНОВЛЕНИЕ 4: ЛАЙКИ НА ТЕМЫ ──────────────────────────────────────────────
+function topicLikeCount(t){return Object.keys(t.likes||{}).length;}
+async function toggleTopicLike(id){
+  if(!cu){showAuth();return;}
+  const t=curForumTopic&&curForumTopic.id===id?curForumTopic:null;if(!t)return;
+  const likes={...(t.likes||{})};
+  if(likes[cu.id])delete likes[cu.id];else likes[cu.id]=true;
+  t.likes=likes;await fsUpdate('forumTopics',id,{likes});
+  renderTopicLikeBtn();
+}
+function renderTopicLikeBtn(){
+  const el=document.getElementById('forumLikeBtn');if(!el||!curForumTopic)return;
+  const liked=cu&&curForumTopic.likes&&curForumTopic.likes[cu.id];
+  el.innerHTML=`${liked?'❤️':'🤍'} ${topicLikeCount(curForumTopic)}`;
+  el.classList.toggle('bpr',!!liked);el.classList.toggle('bgh',!liked);
+}
+
+// ── ОБНОВЛЕНИЕ 5: РЕДАКТИРОВАНИЕ СВОЕЙ ТЕМЫ/ОТВЕТА ──────────────────────────
+function editForumTopicPrompt(id){
+  const t=curForumTopic;if(!t||t.id!==id)return;
+  const newTitle=prompt('Заголовок темы:',t.title);if(newTitle===null)return;
+  const newBody=prompt('Текст темы:',t.body);if(newBody===null)return;
+  if(!newTitle.trim()||!newBody.trim()){notify('Поля не могут быть пустыми!','err');return;}
+  t.title=newTitle.trim();t.body=newBody.trim();
+  fsUpdate('forumTopics',id,{title:t.title,body:t.body}).then(ok=>{
+    if(ok){notify('✅ Тема обновлена','ok');openForumTopic(id);}else notify('❌ Ошибка сохранения','err');
+  });
+}
+function editForumReplyPrompt(id,topicId){
+  const r=(curForumTopic?._replies||[]).find(x=>x.id===id);if(!r)return;
+  const newBody=prompt('Текст ответа:',r.body);if(newBody===null)return;
+  if(!newBody.trim()){notify('Ответ не может быть пустым!','err');return;}
+  r.body=newBody.trim();
+  fsUpdate('forumReplies',id,{body:r.body}).then(ok=>{
+    if(ok){notify('✅ Ответ обновлён','ok');renderForumReplies(topicId);}else notify('❌ Ошибка сохранения','err');
+  });
+}
+
+// ── ОБНОВЛЕНИЕ 6: ПОИСК ПО ФОРУМУ ────────────────────────────────────────────
+let forumSearchTimer=null;
+function onForumSearch(v){
+  clearTimeout(forumSearchTimer);
+  forumSearchTimer=setTimeout(()=>renderForumCatTopics(v.trim().toLowerCase()),200);
+}
+
+// ── ОБНОВЛЕНИЕ 7: СОРТИРОВКА ТЕМ ─────────────────────────────────────────────
+let forumSortMode='new';
+function setForumSort(mode){forumSortMode=mode;renderForumCatTopics(document.getElementById('forumSearchInp')?.value.trim().toLowerCase()||'');}
+function sortForumTopics(topics){
+  const arr=[...topics];
+  if(forumSortMode==='new')arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  else if(forumSortMode==='popular')arr.sort((a,b)=>(b.repliesCount||0)-(a.repliesCount||0));
+  else if(forumSortMode==='likes')arr.sort((a,b)=>topicLikeCount(b)-topicLikeCount(a));
+  arr.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+  return arr;
+}
+function renderForumCatTopics(q){
+  const cat=localForumCat.find(c=>c.id===curForumCatId);if(!cat)return;
+  const list=document.getElementById('forumTopicsList');
+  let topics=cat._topics||[];
+  if(q)topics=topics.filter(t=>t.title.toLowerCase().includes(q)||(t.body||'').toLowerCase().includes(q));
+  topics=sortForumTopics(topics);
+  if(!topics.length){list.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>${q?'Ничего не найдено':'Тем пока нет'}</h3></div>`;return;}
+  list.innerHTML=topics.map(t=>{
+    const au=localUsers.find(u=>u.id===t.authorId);
+    return`<div class="ftopic-row${t.pinned?' pinned':''}" onclick="openForumTopic('${t.id}')">
+      ${fUserAvHtml(au,'ftopic-av')}
+      <div class="ftopic-body">
+        <div class="ftopic-title">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
+        <div class="ftopic-meta"><span onclick="event.stopPropagation();openForumProfile('${t.authorId}')" style="cursor:pointer;font-weight:600;">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span></div>
+      </div>
+      <div class="ftopic-stats"><div><b>${t.repliesCount||0}</b>ответов</div><div><b>${topicLikeCount(t)}</b>❤️</div><div><b>${t.views||0}</b>👁</div></div>
+    </div>`;
+  }).join('');
 }
 
 
