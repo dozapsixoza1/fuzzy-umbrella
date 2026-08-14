@@ -320,6 +320,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 .sig-karatel{background:linear-gradient(135deg,rgba(255,60,172,.12),rgba(123,97,255,.12));border:1px solid rgba(255,60,172,.3);color:#ff3cac;}
 .sig-deza{background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(123,97,255,.1));border:1px solid rgba(0,229,255,.25);color:var(--a);}
 .sig-media{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);color:var(--gold);}
+.sig-guest{background:linear-gradient(135deg,rgba(0,255,136,.1),rgba(0,229,255,.1));border:1px solid rgba(0,255,136,.3);color:#00ff88;}
 
 /* ── THEME SWITCHER ─── */
 .theme-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
@@ -430,6 +431,21 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
 .fcolor-pick .fcolor-dot:hover{transform:scale(1.15);}
 .fcolor-pick .fcolor-dot.sel{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--t);}
 .fsort-btn.on{background:var(--a);color:#000;border-color:var(--a);}
+
+/* ── КОСМЕТИКА МАГАЗИНА ─── */
+.av-frame-glow{position:relative;}
+.av-frame-glow::after{content:'';position:absolute;inset:-3px;border-radius:inherit;padding:3px;
+  background:linear-gradient(135deg,#00e5ff,#ff3cac,#7b61ff,#ffd700,#00e5ff);background-size:300% 300%;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+  animation:avFrameSpin 3s linear infinite;pointer-events:none;}
+@keyframes avFrameSpin{0%{background-position:0% 50%;}100%{background-position:300% 50%;}}
+.confetti-piece{position:fixed;top:-20px;width:8px;height:8px;z-index:10000;pointer-events:none;border-radius:2px;
+  animation:confettiFall 2.6s linear forwards;}
+@keyframes confettiFall{to{transform:translateY(105vh) rotate(600deg);opacity:.3;}}
+.vip-top-row{border:1px solid var(--gold)!important;background:linear-gradient(90deg,rgba(255,215,0,.08),transparent)!important;}
+.item-of-day{position:relative;}
+.item-of-day::before{content:'🔥 ТОВАР ДНЯ';position:absolute;top:-11px;left:14px;background:linear-gradient(90deg,#ff9500,#ff3cac);
+  color:#000;font-size:10px;font-weight:800;padding:3px 10px;border-radius:8px;letter-spacing:.3px;}
 
 /* ── ТЕХ.РАБОТЫ ─── */
 .maint-overlay{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;
@@ -846,6 +862,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
     <div class="fc" onclick="setF('Младший Фейм',this)">🌟 Младший Фейм</div>
     <div class="fc" onclick="setF('Бичи',this)">💀 Бичи</div>
   </div>
+  <div id="announceBox"></div>
   <div class="catsec" id="catSect">
     <div class="sechd">Каталог участников</div>
     <div class="cgrid" id="cGrid"><div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
@@ -867,6 +884,11 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="posts-page">
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;">
       <button class="btn bgh bsm" onclick="goHome()">🏠 TK Fame List</button>
+      <button class="btn bgh bsm" onclick="showForumLeaderboard()">🏆 Топ форума</button>
+      <button class="btn bgh bsm" onclick="showRules()">📜 Правила</button>
+      <button class="btn bgh bsm" onclick="showOnlineNow()">🟢 Онлайн</button>
+      <button class="btn bgh bsm" onclick="showEventsCalendar()">📅 События</button>
+      <button class="btn bgh bsm" onclick="oOv('feedbackOv')">💡 Идея</button>
     </div>
     <div class="pgtit">💬 Форум</div>
     <div class="pgsub" style="margin-bottom:28px;">Обсуждения, вопросы и предложения сообщества</div>
@@ -1011,6 +1033,11 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
         Монеты начисляются за активность и от администрации
       </div>
     </div>
+    <div id="dailyBonusBox"></div>
+    <div class="fcard" style="margin-bottom:20px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="fg" style="flex:1;min-width:180px;margin-bottom:0;"><label class="fl">🎟️ Промокод</label><input class="fi" id="promoInp" placeholder="Введите код"/></div>
+      <button class="btn bpr" onclick="redeemPromo()">Активировать</button>
+    </div>
     <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:12px;">🏪 Товары<span style="flex:1;height:1px;background:var(--b);display:block;"></span></div>
     <div class="shop-grid" id="shopGrid">
       <div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>
@@ -1028,6 +1055,8 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
       <div class="ai" id="sPosts" onclick="aTab('posts',this)">📰 Посты</div>
       <div class="ai" id="sForum" onclick="aTab('forum',this)">💬 Форум</div>
       <div class="ai" id="sMaint" onclick="aTab('maint',this)">🔧 Тех.Работы</div>
+      <div class="ai" id="sReports" onclick="aTab('reports',this)">🚩 Жалобы</div>
+      <div class="ai" id="sPromo" onclick="aTab('promo',this)">🎟️ Промокоды</div>
       <div class="albl">Сообщество</div>
       <div class="ai" id="sUsers" onclick="aTab('users',this)">👥 Пользователи</div>
       <div class="ai" id="sDeputies" onclick="aTab('deputies',this)">🥇 Заместители</div>
@@ -1096,6 +1125,32 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
           </div>
           <button class="btn bpr" onclick="saveMaintenance()" style="width:100%;">💾 Сохранить</button>
         </div>
+        <div class="ahd" style="margin-top:32px;"><div class="aptit">📜 Правила сообщества</div></div>
+        <div class="fcard">
+          <div class="fg"><label class="fl">Текст правил</label><textarea class="fi" id="rulesInp" rows="8" placeholder="1. Уважайте друг друга...&#10;2. Запрещён спам...&#10;3. ..."></textarea></div>
+          <button class="btn bpr" onclick="saveRules()" style="width:100%;">💾 Сохранить правила</button>
+        </div>
+        <div class="ahd" style="margin-top:32px;"><div class="aptit">📢 Объявление на главной</div></div>
+        <div class="fcard">
+          <div class="fg"><label class="fl">Текст объявления (пусто — скрыть)</label><textarea class="fi" id="announceInp" rows="3"></textarea></div>
+          <div class="fg"><label class="fl">Цвет рамки</label><input class="fi" id="announceColorInp" type="color" value="#7b61ff" style="height:44px;padding:4px;"/></div>
+          <button class="btn bpr" onclick="saveAnnouncement()" style="width:100%;">💾 Сохранить объявление</button>
+        </div>
+      </div>
+      <div id="tReports" style="display:none;">
+        <div class="ahd"><div class="aptit">🚩 Жалобы на контент</div></div>
+        <div id="reportsTab"></div>
+      </div>
+      <div id="tPromo" style="display:none;">
+        <div class="ahd"><div class="aptit">🎟️ Промокоды</div></div>
+        <div class="fcard" style="margin-bottom:20px;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="fg" style="flex:1;min-width:120px;"><label class="fl">Код</label><input class="fi" id="promoCodeInp" placeholder="TKFL2026"/></div>
+            <div class="fg" style="flex:1;min-width:100px;"><label class="fl">Монет</label><input class="fi" id="promoCoinsInp" type="number" placeholder="100"/></div>
+            <div class="fg" style="flex:1;min-width:100px;"><label class="fl">Лимит использ. (0=∞)</label><input class="fi" id="promoMaxInp" type="number" placeholder="0"/></div>
+          </div>
+          <button class="btn bpr" onclick="adminCreatePromo()" style="width:100%;">➕ Создать промокод</button>
+        </div>
       </div>
       <div id="tUsers" style="display:none;">
         <div class="ahd"><div class="aptit">👥 Пользователи</div></div>
@@ -1131,8 +1186,9 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="modal" onclick="event.stopPropagation()">
     <div class="mhd"><div class="mtit">➕ Новая тема</div><button class="mx" onclick="cOvId('newTopicOv')">✕</button></div>
     <div class="mbody">
-      <div class="fg"><label class="fl">Заголовок</label><input class="fi" id="ntTitle" maxlength="120" placeholder="О чём тема?"/></div>
-      <div class="fg"><label class="fl">Текст</label><textarea class="fi" id="ntBody" rows="6" placeholder="Опишите подробнее..."></textarea></div>
+      <div class="fg"><label class="fl">Заголовок</label><input class="fi" id="ntTitle" maxlength="120" placeholder="О чём тема?" oninput="autosaveDraft()"/></div>
+      <div class="fg"><label class="fl">Текст</label><textarea class="fi" id="ntBody" rows="6" placeholder="Опишите подробнее... (**жирный**, *курсив*, `код`)" oninput="autosaveDraft()"></textarea></div>
+      <div class="fg" id="ntGifBox" style="display:none;"><label class="fl">🎬 Ссылка на GIF/картинку</label><input class="fi" id="ntGifUrl" placeholder="https://..."/></div>
       <button class="btn bpr" onclick="createForumTopic()" style="width:100%;">Создать тему</button>
     </div>
   </div>
@@ -1142,6 +1198,51 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="modal lg" onclick="event.stopPropagation()">
     <div class="mhd"><div class="mtit">Профиль на форуме</div><button class="mx" onclick="cOvId('forumProfOv')">✕</button></div>
     <div class="mbody" id="forumProfBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="userWelcomeOv" onclick="event.stopPropagation()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">👋 Привет!</div></div>
+    <div class="mbody" id="welcomeBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="feedbackOv" onclick="cOv(event,'feedbackOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">💡 Предложить идею</div><button class="mx" onclick="cOvId('feedbackOv')">✕</button></div>
+    <div class="mbody">
+      <div class="fg"><label class="fl">Ваша идея или пожелание</label><textarea class="fi" id="feedbackInp" rows="5" placeholder="Что можно улучшить на сайте?"></textarea></div>
+      <button class="btn bpr" onclick="submitFeedback()" style="width:100%;">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov hidden" id="forumLbOv" onclick="cOv(event,'forumLbOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">🏆 Топ форума</div><button class="mx" onclick="cOvId('forumLbOv')">✕</button></div>
+    <div class="mbody" id="forumLbBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="rulesOv" onclick="cOv(event,'rulesOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">📜 Правила сообщества</div><button class="mx" onclick="cOvId('rulesOv')">✕</button></div>
+    <div class="mbody" id="rulesBody" style="white-space:pre-wrap;line-height:1.7;font-size:14px;"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="onlineNowOv" onclick="cOv(event,'onlineNowOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">🟢 Сейчас на сайте</div><button class="mx" onclick="cOvId('onlineNowOv')">✕</button></div>
+    <div class="mbody" id="onlineNowBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="eventsOv" onclick="cOv(event,'eventsOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">📅 Календарь событий</div><button class="mx" onclick="cOvId('eventsOv')">✕</button></div>
+    <div class="mbody" id="eventsBody"></div>
   </div>
 </div>
 
@@ -1385,12 +1486,46 @@ const SHOP_ITEMS=[
   {id:'sig_karatel',name:'Роспись от Карателя',desc:'Эксклюзивная роспись от Карателя на вашем профиле.',price:200,icon:'✍️',rarity:'rare'},
   {id:'sig_deza',name:'Роспись от Deza',desc:'Эксклюзивная роспись от Deza на вашем профиле.',price:200,icon:'🖋️',rarity:'rare'},
   {id:'sig_media',name:'Роспись от медиек',desc:'Специальная роспись от топ медиек Fame List.',price:150,icon:'🎙️',rarity:'uncommon'},
+  // ── Кастомизация профиля ──
+  {id:'name_color',name:'Цветной ник',desc:'Выберите цвет своего имени — виден в каталоге, чате и профиле.',price:250,icon:'🎨',rarity:'uncommon',configure:'nameColor'},
+  {id:'av_frame',name:'Анимированная рамка аватара',desc:'Переливающийся светящийся бордер вокруг вашего аватара.',price:300,icon:'🖼️',rarity:'rare'},
+  {id:'profile_bg',name:'Кастомный фон профиля',desc:'Свой цвет/градиент на странице вашего профиля.',price:200,icon:'🌈',rarity:'uncommon',configure:'profileBg'},
+  {id:'name_font',name:'Особый шрифт имени',desc:'Стилизованный шрифт для вашего имени вместо стандартного.',price:150,icon:'🔤',rarity:'uncommon',configure:'nameFont'},
+  {id:'status_emoji',name:'Эмодзи-статус',desc:'Свой смайл-статус рядом с именем.',price:100,icon:'😎',rarity:'common',configure:'statusEmoji'},
+  // ── Статусы и подписи ──
+  {id:'sig_guest',name:'Роспись "Гость чести"',desc:'Особая почётная роспись на вашем профиле.',price:200,icon:'🎗️',rarity:'rare'},
+  {id:'title_custom',name:'Титул под ником',desc:'Свой текст-титул вместо стандартной роли (например «Легенда TK»).',price:350,icon:'🏷️',rarity:'rare',configure:'customTitle'},
+  {id:'verified_manual',name:'Значок "Проверен вручную"',desc:'Отдельный бейдж за реальные заслуги, выдаётся администрацией.',price:400,icon:'🏅',rarity:'epic'},
+  {id:'gold_crown',name:'Золотая корона',desc:'Корона рядом с аватаром — статусная косметика.',price:500,icon:'👑',rarity:'epic'},
+  // ── Форумные привилегии ──
+  {id:'pin_topic_24h',name:'Самозакреп темы (24ч)',desc:'Закрепите свою тему на 24 часа без модератора.',price:300,icon:'📌',rarity:'rare',consumable:true},
+  {id:'char_limit_boost',name:'Расширенный лимит символов',desc:'Больше символов в заголовке и тексте темы форума.',price:150,icon:'📏',rarity:'uncommon'},
+  {id:'forum_border',name:'Цветная рамка тем/ответов',desc:'Своя цветная рамка вокруг ваших тем и ответов на форуме.',price:250,icon:'🖌️',rarity:'uncommon',configure:'forumBorder'},
+  {id:'gif_attach',name:'GIF/стикер к посту',desc:'Возможность прикрепить картинку/GIF к теме или ответу на форуме.',price:150,icon:'🎬',rarity:'uncommon'},
+  // ── Экономика ──
+  {id:'coin_multiplier',name:'Множитель монет x1.5',desc:'На 24 часа: любые начисления монет от администрации увеличены в 1.5 раза.',price:300,icon:'📈',rarity:'rare'},
+  {id:'shop_discount',name:'Скидка 10% в магазине',desc:'Скидка 10% на все покупки в магазине в течение недели.',price:400,icon:'🏷️',rarity:'rare'},
+  {id:'daily_bonus_sub',name:'Ежедневный бонус (7 дней)',desc:'Забирайте +50 монет каждый день в течение недели.',price:350,icon:'🎁',rarity:'rare'},
+  // ── Развлечения ──
+  {id:'lootbox',name:'Случайная коробка',desc:'Мгновенно откройте коробку — случайные монеты или косметика в подарок!',price:200,icon:'🎁',rarity:'uncommon',consumable:true},
+  {id:'priority_giveaway',name:'Билет на розыгрыш вне очереди',desc:'Гарантированное дополнительное участие в следующем розыгрыше.',price:250,icon:'🎟️',rarity:'rare',consumable:true},
+  {id:'nickname_change',name:'Смена никнейма',desc:'Смените отображаемое имя на сайте.',price:100,icon:'✏️',rarity:'common',consumable:true},
+  {id:'confetti_login',name:'Конфетти при входе',desc:'Эффект конфетти при каждом заходе на сайт.',price:150,icon:'🎊',rarity:'uncommon'},
+  // ── VIP ──
+  {id:'vip_top_slot',name:'VIP-строка в топе',desc:'Постоянное закреплённое место в топ-листе сайта.',price:600,icon:'👑',rarity:'epic'},
+  {id:'priority_support',name:'Приоритетная поддержка',desc:'Ваши заявки и жалобы рассматриваются в приоритете.',price:300,icon:'🎫',rarity:'rare'},
+  {id:'chat_color',name:'Персональный цвет чата',desc:'Ваши сообщения в общем чате выделены выбранным цветом.',price:200,icon:'💬',rarity:'uncommon',configure:'chatColor'},
+  {id:'double_vote',name:'Двойной голос в опросах',desc:'Ваш голос в будущих опросах и голосованиях считается за два.',price:250,icon:'🗳️',rarity:'rare'},
+  // ── Мета ──
+  {id:'custom_theme',name:'Своя тема оформления',desc:'Кастомный акцентный цвет интерфейса сайта — только для вас.',price:450,icon:'🎭',rarity:'epic',configure:'customTheme'},
 ];
+
 const RAR_LABELS={common:'обычное',uncommon:'необычное',rare:'редкое',epic:'эпическое'};
 const SIG_STYLES={
   sig_karatel:{label:'✍️ Роспись Карателя',cls:'sig-karatel'},
   sig_deza:{label:'🖋️ Роспись от Deza',cls:'sig-deza'},
   sig_media:{label:'🎙️ Роспись медиек',cls:'sig-media'},
+  sig_guest:{label:'🎗️ Роспись «Гость чести»',cls:'sig-guest'},
 };
 
 // ── FIREBASE HELPERS ──────────────────────────────────────────────────────────
@@ -1413,6 +1548,7 @@ async function loadData(){
   const s=await fsGetDoc('settings','site');
   siteSettings=s||{maintenance:false,maintenanceMsg:''};
   checkMaintenanceMode();
+  renderAnnouncement();
   renderCards();
   updStats();
   if(cu) loadNotifications();
@@ -1489,10 +1625,36 @@ function initAuthListener(){
   onAuthStateChanged(window._auth,async(fbUser)=>{
     if(fbUser&&!cu){
       let u=await fsGetDoc('users',fbUser.uid);
-      if(u){cu=u;await loadNotifications();updateNav();}
+      if(u){
+        if(u.banned){
+          document.getElementById('maintOverlay').classList.remove('hidden');
+          document.getElementById('maintMsgText').innerHTML=`🚫 Ваш аккаунт заблокирован.${u.banReason?'<br>Причина: '+escHtml(u.banReason):''}<br>По вопросам — обратитесь к администрации.`;
+          document.querySelector('.maint-overlay .mo-ic').textContent='🚫';
+          document.querySelector('.maint-overlay h1').textContent='Доступ заблокирован';
+          document.body.style.overflow='hidden';
+          return;
+        }
+        cu=u;await loadNotifications();updateNav();
+        if(u.customTheme)document.documentElement.style.setProperty('--a',u.customTheme);
+        if((u.purchases||[]).includes('confetti_login'))fireConfetti();
+        if(!u.welcomed)showWelcomeModal();
+        checkLoginStreak(u);checkAccountBirthday(u);startPresenceHeartbeat();
+      }
     }
     checkMaintenanceMode();
   });
+}
+function fireConfetti(){
+  const colors=['#00e5ff','#ff3cac','#7b61ff','#ffd700','#00ff88'];
+  for(let i=0;i<40;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.left=Math.random()*100+'vw';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay=(Math.random()*0.6)+'s';
+    p.style.width=p.style.height=(5+Math.random()*6)+'px';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(),3200);
+  }
 }
 
 // ── ROLE HELPERS ──────────────────────────────────────────────────────────────
@@ -1605,12 +1767,14 @@ function renderCards(items){
     const isPrem=pur.includes('premium');
     const isVerif=pur.includes('verified');
     const isAnim=pur.includes('anim_card')&&!isPrem;
+    const ownerU=localUsers.find(u=>u.id===it.uid);
+    const hasFrame=hasPurchase(it.uid,'av_frame');
     const cardCls=`card${isPrem?' prem':''}${isAnim?' anim-card':''}`;
     const verifBadge=isVerif?`<span class="vico" title="Верифицирован">✓</span>`:'';
     const premBadge=isPrem?`<span class="tag" style="background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,149,0,.1));color:var(--gold);border:1px solid rgba(255,215,0,.3);">⭐ Премиум</span>`:'';
     return `
     <div class="${cardCls}" style="animation-delay:${i*.05}s;">
-      <div class="cth" onclick="showProf('${it.id}')">
+      <div class="cth${hasFrame?' av-frame-glow':''}" onclick="showProf('${it.id}')">
         ${it.av?`<img src="${it.av}" alt="${it.name}">`:`<div class="cte">${it.em||catEmoji[it.cat]||'🙂'}</div>`}
         <div class="cbdg">
           ${it.pin?'<span class="tag tpin">📌</span>':''}
@@ -1620,7 +1784,7 @@ function renderCards(items){
         <div class="views-badge">👁 ${it.views||0}</div>
       </div>
       <div class="cbody">
-        <div class="cname" onclick="showProf('${it.id}')" style="cursor:pointer;">${it.name}${verifBadge}</div>
+        <div class="cname" onclick="showProf('${it.id}')" style="cursor:pointer;">${styledNameHtml(ownerU,it.name)}${verifBadge}</div>
         <div class="ctrow" onclick="showProf('${it.id}')" style="cursor:pointer;">
           <span class="tag tcat">${it.cat}</span>
           ${premBadge}
@@ -1808,20 +1972,27 @@ async function showUserProfile(userId){
   const isPrem=pur.includes('premium');
   const isVerif=pur.includes('verified');
   const sigs=Object.keys(SIG_STYLES).filter(k=>pur.includes(k));
+  const hasFrame=pur.includes('av_frame');
+  const bgStyle=u.profileBg?`background:${u.profileBg};`:(isPrem?'background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,149,0,.1),rgba(123,97,255,.15));':'');
+  const crownBadge=pur.includes('gold_crown')?'👑 ':'';
+  const manualVBadge=pur.includes('verified_manual')?' <span title="Проверен вручную">🏅</span>':'';
+  const titleBadge=u.customTitle?`<span class="rb" style="background:rgba(123,97,255,.15);border:1px solid rgba(123,97,255,.35);color:#7b61ff;">${escHtml(u.customTitle)}</span>`:'';
+  const nameStyle=u.nameColor?`color:${u.nameColor};`:'';const nameFontStyle=u.nameFont?`font-family:${u.nameFont};`:'';
   content.innerHTML=`
     <div class="prof-header">
-      <div class="prof-banner" style="${isPrem?'background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,149,0,.1),rgba(123,97,255,.15));':''};position:relative;">
+      <div class="prof-banner" style="${bgStyle}position:relative;">
         <div class="prof-banner-inner">${catEmoji[u.cat]||'✨'}</div>
         ${isPrem?`<div style="position:absolute;top:10px;right:10px;padding:4px 10px;background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.3);border-radius:8px;font-size:12px;font-weight:700;color:var(--gold);">⭐ Премиум</div>`:''}
       </div>
       <div class="prof-info">
         <div class="prof-av-wrap">
-          <div class="prof-av" style="${isPrem?'border:3px solid rgba(255,215,0,.5);':''}">${av}</div>
+          <div class="prof-av${hasFrame?' av-frame-glow':''}" style="${isPrem?'border:3px solid rgba(255,215,0,.5);':''}">${av}</div>
         </div>
         <div class="prof-name">
-          ${u.name}
+          ${crownBadge}<span style="${nameStyle}${nameFontStyle}">${u.name}</span>${u.statusEmoji?` ${escHtml(u.statusEmoji)}`:''}${manualVBadge}
           ${isVerif?`<span class="vico" title="Верифицирован">✓</span>`:''}
           ${u.role!=='user'?`<span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span>`:''}
+          ${titleBadge}
           ${forumBadge(u)}
         </div>
         <div class="prof-un">@${u.un}</div>
@@ -1846,12 +2017,35 @@ async function showUserProfile(userId){
         <div class="ainf"><div class="an">${a.name}</div><div class="am"><span>${a.cat}</span><span>${a.dt}</span></div>
         <span class="sb ${stCls(a.st)}">${stTx(a.st)}</span></div></div>`).join('')}
     </div>`:''}
+    ${cu&&cu.id!==userId?`
+    <div class="prof-section" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn ${cu.following&&cu.following.includes(userId)?'bgh':'bpr'} bsm" onclick="toggleFollow('${userId}')">${cu.following&&cu.following.includes(userId)?'✅ Вы подписаны':'➕ Подписаться'}</button>
+      <button class="btn bgold bsm" onclick="openGiftCoins('${userId}')">🎁 Подарить монеты</button>
+      <span style="font-size:12px;color:var(--m);align-self:center;">👥 ${followerCount(userId)} подписчиков</span>
+    </div>`:''}
+    ${cu&&cu.id===userId?`
+    <div class="prof-section">
+      <div class="prof-section-title">🛍 Мои покупки</div>
+      <div id="purchaseHistoryList">${renderPurchaseHistoryHtml()}</div>
+    </div>`:''}
     ${cu&&cu.id===userId&&isModer()?`
     <div class="prof-section">
       <div class="prof-section-title">⚙️ Управление</div>
       <button class="btn bgr" onclick="showAdmin()">Открыть панель</button>
     </div>`:''}`;
 }
+function renderPurchaseHistoryHtml(){
+  if(!cu)return'';
+  const pur=cu.purchases||[];
+  const owned=SHOP_ITEMS.filter(it=>!it.consumable&&pur.includes(it.id));
+  if(!owned.length)return`<div style="color:var(--m);font-size:13px;">Пока нет покупок</div>`;
+  return owned.map(it=>`<div class="ai2" style="margin-bottom:10px;">
+    <div class="aav">${it.icon}</div>
+    <div class="ainf" style="flex:1;"><div class="an">${it.name}</div><div class="am"><span>🪙 ${it.price}</span></div></div>
+    <button class="btn bgh bsm" onclick="sellBackItem('${it.id}')">💰 Продать за ${Math.floor(it.price/2)}</button>
+  </div>`).join('');
+}
+function renderPurchaseHistory(){const el=document.getElementById('purchaseHistoryList');if(el)el.innerHTML=renderPurchaseHistoryHtml();}
 
 // ── AVATAR UPLOAD ─────────────────────────────────────────────────────────────
 function handleAv(inp){
@@ -1897,17 +2091,21 @@ function renderShop(){
   const pur=cu?cu.purchases||[]:[];
   const coins=cu?cu.coins||0:0;
   document.getElementById('shopCoins').textContent=coins;
+  renderDailyBonusBox();
   const g=document.getElementById('shopGrid');
+  const iod=getItemOfDay();
   g.innerHTML=SHOP_ITEMS.map((item,i)=>{
-    const owned=pur.includes(item.id);
-    const canBuy=!owned&&coins>=item.price;
-    return `<div class="sitem rar-${item.rarity}" style="animation-delay:${i*.07}s;">
+    const owned=!item.consumable&&pur.includes(item.id);
+    const price=cu?effectivePrice(item):item.price;
+    const canBuy=!owned&&coins>=price;
+    const isIod=iod&&iod.itemId===item.id;
+    return `<div class="sitem rar-${item.rarity}${isIod?' item-of-day':''}" style="animation-delay:${i*.07}s;">
       <div class="rar-label">${RAR_LABELS[item.rarity]}</div>
       <span class="sitem-ico">${item.icon}</span>
-      <div class="sitem-name">${item.name}</div>
+      <div class="sitem-name">${item.name}${item.consumable?' <span style="font-size:10px;color:var(--m);">(расходуемое)</span>':''}</div>
       <div class="sitem-desc">${item.desc}</div>
       <div class="sitem-foot">
-        <div class="coin-price">🪙 ${item.price}</div>
+        <div class="coin-price">🪙 ${price}${price<item.price?` <span style="text-decoration:line-through;color:var(--m);font-size:11px;">${item.price}</span>`:''}</div>
         ${owned
           ?`<span class="owned-tag">✅ Куплено</span>`
           :`<button class="btn ${canBuy?'bgr':'bgh'} bsm" onclick="confirmBuy('${item.id}')">${canBuy?'Купить':'Нет монет'}</button>`
@@ -1917,14 +2115,43 @@ function renderShop(){
   }).join('');
 }
 
+function renderDailyBonusBox(){
+  const box=document.getElementById('dailyBonusBox');if(!box)return;
+  if(!cu||!cu.dailyBonusUntil||cu.dailyBonusUntil<Date.now()){box.innerHTML='';return;}
+  const today=new Date().toISOString().split('T')[0];
+  const claimed=cu.lastDailyClaim===today;
+  box.innerHTML=`<div class="fcard" style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+    <div><div style="font-weight:700;">🎁 Ежедневный бонус активен</div><div style="font-size:12px;color:var(--m);">+50 монет каждый день до ${new Date(cu.dailyBonusUntil).toLocaleDateString('ru')}</div></div>
+    <button class="btn ${claimed?'bgh':'bgr'} bsm" ${claimed?'disabled':''} onclick="claimDailyBonus()">${claimed?'✅ Уже забрано сегодня':'Забрать +50 🪙'}</button>
+  </div>`;
+}
+async function claimDailyBonus(){
+  if(!cu)return;
+  const today=new Date().toISOString().split('T')[0];
+  if(cu.lastDailyClaim===today)return;
+  const newCoins=(cu.coins||0)+50;
+  cu.coins=newCoins;cu.lastDailyClaim=today;
+  const u=localUsers.find(x=>x.id===cu.id);if(u){u.coins=newCoins;u.lastDailyClaim=today;}
+  await fsUpdate('users',cu.id,{coins:newCoins,lastDailyClaim:today});
+  updateNav();renderShop();notify('🎁 +50 монет!','ok');
+}
+function effectivePrice(item){
+  let p=item.price;
+  const iod=getItemOfDay();
+  if(iod&&iod.itemId===item.id)p=Math.ceil(p*(1-iod.discount/100));
+  if(cu&&cu.discountUntil&&cu.discountUntil>Date.now())p=Math.ceil(p*0.9);
+  return p;
+}
 function confirmBuy(itemId){
   if(!cu){notify('Войдите!','err');return;}
   const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
   const coins=cu.coins||0;
-  const canBuy=coins>=item.price&&!(cu.purchases||[]).includes(itemId);
+  const alreadyOwned=!item.consumable&&(cu.purchases||[]).includes(itemId);
+  const price=effectivePrice(item);
+  const canBuy=coins>=price&&!alreadyOwned;
   if(!canBuy){
-    if((cu.purchases||[]).includes(itemId)){notify('Уже куплено!','err');return;}
-    notify(`Недостаточно монет! Нужно ${item.price}, у вас ${coins}🪙`,'err');return;
+    if(alreadyOwned){notify('Уже куплено!','err');return;}
+    notify(`Недостаточно монет! Нужно ${price}, у вас ${coins}🪙`,'err');return;
   }
   document.getElementById('buyConfirmBody').innerHTML=`
     <div style="text-align:center;padding-bottom:20px;">
@@ -1933,8 +2160,8 @@ function confirmBuy(itemId){
       <div style="font-size:13px;color:var(--m);margin-bottom:20px;">${item.desc}</div>
       <div style="padding:14px;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);border-radius:12px;margin-bottom:20px;">
         <div style="font-size:13px;color:var(--m);margin-bottom:4px;">Стоимость</div>
-        <div style="font-size:24px;font-weight:800;color:var(--gold);">🪙 ${item.price}</div>
-        <div style="font-size:12px;color:var(--m);margin-top:4px;">Остаток после покупки: <b style="color:var(--gold);">${coins-item.price}</b> 🪙</div>
+        <div style="font-size:24px;font-weight:800;color:var(--gold);">🪙 ${price}${price<item.price?` <span style="font-size:14px;text-decoration:line-through;color:var(--m);">${item.price}</span>`:''}</div>
+        <div style="font-size:12px;color:var(--m);margin-top:4px;">Остаток после покупки: <b style="color:var(--gold);">${coins-price}</b> 🪙</div>
       </div>
       <div style="display:flex;gap:10px;">
         <button class="btn bgh" style="flex:1;justify-content:center;" onclick="cOvId('buyConfirmOv')">Отмена</button>
@@ -1949,18 +2176,119 @@ async function doBuy(itemId){
   const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item)return;
   const coins=cu.coins||0;
   const pur=cu.purchases||[];
-  if(pur.includes(itemId)){notify('Уже куплено!','err');cOvId('buyConfirmOv');return;}
-  if(coins<item.price){notify('Недостаточно монет!','err');cOvId('buyConfirmOv');return;}
-  const newCoins=coins-item.price;
-  const newPur=[...pur,itemId];
-  const ok=await fsUpdate('users',cu.id,{coins:newCoins,purchases:newPur});
+  const alreadyOwned=!item.consumable&&pur.includes(itemId);
+  const price=effectivePrice(item);
+  if(alreadyOwned){notify('Уже куплено!','err');cOvId('buyConfirmOv');return;}
+  if(coins<price){notify('Недостаточно монет!','err');cOvId('buyConfirmOv');return;}
+  const newCoins=coins-price;
+  const newPur=item.consumable?pur:[...pur,itemId];
+  const extra={};
+  if(item.id==='coin_multiplier')extra.multiplierUntil=Date.now()+24*3600*1000;
+  if(item.id==='shop_discount')extra.discountUntil=Date.now()+7*24*3600*1000;
+  if(item.id==='daily_bonus_sub')extra.dailyBonusUntil=Date.now()+7*24*3600*1000;
+  if(item.id==='priority_giveaway')extra.giveawayTickets=(cu.giveawayTickets||0)+1;
+  const ok=await fsUpdate('users',cu.id,{coins:newCoins,purchases:newPur,...extra});
   if(!ok){notify('Ошибка покупки!','err');return;}
-  cu.coins=newCoins;cu.purchases=newPur;
+  cu.coins=newCoins;cu.purchases=newPur;Object.assign(cu,extra);
   const u=localUsers.find(x=>x.id===cu.id);
-  if(u){u.coins=newCoins;u.purchases=newPur;}
+  if(u){u.coins=newCoins;u.purchases=newPur;Object.assign(u,extra);}
   cOvId('buyConfirmOv');
   renderShop();updateNav();filterCards();
   notify(`🎉 ${item.name} успешно куплено!`,'ok');
+  await handlePostPurchase(item);
+}
+
+// ── постпокупочные эффекты: настройка косметики / расходники ──────────────
+async function handlePostPurchase(item){
+  if(item.configure)configureShopItem(item.id,item.configure);
+  if(item.id==='lootbox')openLootbox();
+  if(item.id==='nickname_change')doNicknameChange();
+  if(item.id==='pin_topic_24h'){
+    if(curForumTopic&&curForumTopic.authorId===cu.id){
+      await fsUpdate('forumTopics',curForumTopic.id,{pinned:true,pinnedUntil:Date.now()+24*3600*1000});
+      curForumTopic.pinned=true;curForumTopic.pinnedUntil=Date.now()+24*3600*1000;
+      notify('📌 Тема закреплена на 24 часа!','ok');openForumTopic(curForumTopic.id);
+    }else{
+      notify('📌 Откройте свою тему и снова нажмите «Купить» — она закрепится автоматически','ok');
+    }
+  }
+}
+function configureShopItem(itemId,field){
+  let val=null;
+  if(field==='nameColor'||field==='chatColor'||field==='forumBorder'){
+    val=prompt('Введите HEX-цвет (например #00e5ff):','#00e5ff');
+    if(!val)return;
+  }else if(field==='profileBg'){
+    val=prompt('Введите HEX-цвет фона профиля (например #1a1230):','#1a1230');
+    if(!val)return;
+  }else if(field==='nameFont'){
+    const choice=prompt('Выберите шрифт:\n1 — Syne (геометричный)\n2 — Georgia (классический)\n3 — Courier New (моноширинный)','1');
+    val=choice==='2'?'Georgia, serif':choice==='3'?'"Courier New", monospace':'Syne, sans-serif';
+  }else if(field==='statusEmoji'){
+    val=prompt('Введите один эмодзи-статус:','🔥');
+    if(!val)return;
+  }else if(field==='customTitle'){
+    val=prompt('Введите свой титул (до 24 символов):','Легенда TK');
+    if(!val)return;val=val.slice(0,24);
+  }else if(field==='customTheme'){
+    const choice=prompt('Выберите акцентный цвет:\n1 — Голубой\n2 — Розовый\n3 — Фиолетовый\n4 — Золотой\n5 — Зелёный','1');
+    val=({1:'#00e5ff',2:'#ff3cac',3:'#7b61ff',4:'#ffd700',5:'#00ff88'})[choice]||'#00e5ff';
+  }
+  if(val===null)return;
+  cu[field]=val;
+  const u=localUsers.find(x=>x.id===cu.id);if(u)u[field]=val;
+  fsUpdate('users',cu.id,{[field]:val});
+  if(field==='customTheme')document.documentElement.style.setProperty('--a',val);
+  notify('✅ Настройка сохранена','ok');
+}
+function openLootbox(){
+  const roll=Math.random();
+  if(roll<0.6){
+    const amt=20+Math.floor(Math.random()*81);
+    const newCoins=(cu.coins||0)+amt;
+    cu.coins=newCoins;const u=localUsers.find(x=>x.id===cu.id);if(u)u.coins=newCoins;
+    fsUpdate('users',cu.id,{coins:newCoins});updateNav();
+    notify(`🎁 Из коробки выпало ${amt} монет!`,'ok');
+  }else{
+    const free=SHOP_ITEMS.filter(x=>!x.consumable&&x.id!=='lootbox'&&!(cu.purchases||[]).includes(x.id));
+    if(!free.length){notify('🎁 Коробка пуста — у вас уже всё есть!','ok');return;}
+    const won=free[Math.floor(Math.random()*free.length)];
+    const newPur=[...(cu.purchases||[]),won.id];
+    cu.purchases=newPur;const u=localUsers.find(x=>x.id===cu.id);if(u)u.purchases=newPur;
+    fsUpdate('users',cu.id,{purchases:newPur});renderShop();
+    notify(`🎁 Из коробки выпал предмет: ${won.icon} ${won.name}!`,'ok');
+  }
+}
+function doNicknameChange(){
+  const val=prompt('Введите новое имя:',cu.name);
+  if(!val||!val.trim())return;
+  const name=val.trim().slice(0,32);
+  cu.name=name;const u=localUsers.find(x=>x.id===cu.id);if(u)u.name=name;
+  fsUpdate('users',cu.id,{name});updateNav();
+  notify('✅ Имя изменено','ok');
+}
+
+// ── продажа обратно (50% возврат монет) ─────────────────────────────────────
+async function sellBackItem(itemId){
+  const item=SHOP_ITEMS.find(x=>x.id===itemId);if(!item||item.consumable)return;
+  if(!confirm(`Продать «${item.name}» обратно за ${Math.floor(item.price/2)} 🪙?`))return;
+  const refund=Math.floor(item.price/2);
+  const newPur=(cu.purchases||[]).filter(x=>x!==itemId);
+  const newCoins=(cu.coins||0)+refund;
+  cu.purchases=newPur;cu.coins=newCoins;
+  const u=localUsers.find(x=>x.id===cu.id);if(u){u.purchases=newPur;u.coins=newCoins;}
+  await fsUpdate('users',cu.id,{purchases:newPur,coins:newCoins});
+  renderShop();updateNav();renderPurchaseHistory();
+  notify(`✅ Продано за ${refund}🪙`,'ok');
+}
+
+// ── товар дня (детерминирован от даты) ──────────────────────────────────────
+function getItemOfDay(){
+  const eligible=SHOP_ITEMS.filter(x=>!x.consumable);
+  if(!eligible.length)return null;
+  const dayIdx=Math.floor(Date.now()/86400000);
+  const item=eligible[dayIdx%eligible.length];
+  return{itemId:item.id,discount:30};
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
@@ -2027,11 +2355,13 @@ async function doGiveCoins(){
   const amount=parseInt(document.getElementById('gcAmount').value)||0;
   if(!amount||amount<=0){notify('Введите корректную сумму!','err');return;}
   const u=localUsers.find(x=>x.id===userId);if(!u){notify('Пользователь не найден!','err');return;}
-  const newCoins=(u.coins||0)+amount;
+  const hasMultiplier=u.multiplierUntil&&u.multiplierUntil>Date.now();
+  const finalAmount=hasMultiplier?Math.round(amount*1.5):amount;
+  const newCoins=(u.coins||0)+finalAmount;
   await fsUpdate('users',userId,{coins:newCoins});
   u.coins=newCoins;
   if(cu&&cu.id===userId){cu.coins=newCoins;updateNav();}
-  await addNotification(userId,`🪙 Вам начислено ${amount} монет от администрации!`,'ok');
+  await addNotification(userId,`🪙 Вам начислено ${finalAmount} монет от администрации!${hasMultiplier?' (учтён множитель x1.5)':''}`,'ok');
   document.getElementById('gcCurCoins').textContent=newCoins;
   cOvId('giveCoinsOv');
   renderUsers();
@@ -2108,7 +2438,9 @@ function checkCmd(val){const h=document.getElementById('cmdHelp');if(!val.starts
 function chatInpResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
 async function sendChatMsg(){
   if(!cu){showAuth();return;}
+  if(cu.muted){notify('🔇 Вы в муте — писать нельзя','err');return;}
   const inp=document.getElementById('chatInp'),text=inp.value.trim();if(!text)return;
+  if(containsBadWords(text)){notify('❌ Сообщение содержит запрещённые слова','err');return;}
   if(text.startsWith('/')){
     const parts=text.split(' '),cmd=parts[0].toLowerCase();inp.value='';inp.style.height='auto';document.getElementById('cmdHelp').classList.add('hidden');
     if(cmd==='/help'){renderChatMsg({text:'📋 Команды:\n'+getCmds().map(c=>`${c.cmd} — ${c.desc}`).join('\n'),author:'Система',authorRole:'admin',ts:Date.now(),isSystem:true},true);return;}
@@ -2137,6 +2469,8 @@ function renderChatMsg(msg,isMine){
   const av=msg.av?`<img src="${msg.av}" alt="">`:((msg.author||'?').charAt(0));
   const isPremSender=hasPurchase(msg.uid||'','premium');
   const isVerifSender=hasPurchase(msg.uid||'','verified');
+  const senderU=localUsers.find(u=>u.id===msg.uid);
+  const chatColor=senderU&&senderU.chatColor?` style="color:${senderU.chatColor};"`:'';
   const pfxCls=isPremSender?'pfx-prem':prefixClass(msg.authorRole);
   const pfxLbl=isPremSender?'⭐ Премиум':prefixLabel(msg.authorRole);
   const pfx=msg.isSystem?'':`<span class="msg-prefix ${pfxCls}">${pfxLbl}</span>`;
@@ -2144,7 +2478,7 @@ function renderChatMsg(msg,isMine){
   const t=new Date(msg.ts||Date.now());const ts=t.getHours().toString().padStart(2,'0')+':'+t.getMinutes().toString().padStart(2,'0');
   div.innerHTML=msg.isSystem
     ?`<div style="width:100%;text-align:center;"><div style="display:inline-block;padding:6px 14px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.12);border-radius:10px;font-size:12px;color:var(--m);white-space:pre-wrap;">${msg.text}</div></div>`
-    :`<div class="msg-av">${av}</div><div class="msg-bubble"><div class="msg-sender">${pfx}<span style="color:var(--t)">${msg.author||'?'}</span>${verifIco}</div><div class="msg-text">${msg.isAction?`<i style="color:var(--a3);">${msg.text}</i>`:msg.text}</div><div class="msg-time">${ts}</div></div>`;
+    :`<div class="msg-av">${av}</div><div class="msg-bubble"><div class="msg-sender">${pfx}<span${chatColor}>${msg.author||'?'}</span>${verifIco}</div><div class="msg-text">${msg.isAction?`<i style="color:var(--a3);">${msg.text}</i>`:msg.text}</div><div class="msg-time">${ts}</div></div>`;
   el.appendChild(div);
 }
 
@@ -2152,7 +2486,7 @@ function renderChatMsg(msg,isMine){
 function showAdmin(){if(!isModer()){notify('Нет доступа!','err');return;}showPage('adminPage');aTab('apps',document.getElementById('sApps'));}
 function aTab(tab,el){
   document.querySelectorAll('.ai').forEach(s=>s.classList.remove('on'));el.classList.add('on');
-  ['tApps','tCat','tPosts','tForum','tMaint','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
+  ['tApps','tCat','tPosts','tForum','tMaint','tReports','tPromo','tUsers','tDeputies','tModers'].forEach(t=>document.getElementById(t).style.display='none');
   if(tab==='apps'){document.getElementById('tApps').style.display='block';renderAdmStats();renderAdmApps('pending');}
   if(tab==='cat'&&isDeputy()){document.getElementById('tCat').style.display='block';renderAdmCat();}
   if(tab==='posts'&&isDeputy()){document.getElementById('tPosts').style.display='block';renderAdmPosts();}
@@ -2165,7 +2499,26 @@ function aTab(tab,el){
   if(tab==='users'&&isAdmin()){document.getElementById('tUsers').style.display='block';renderUsers();}
   if(tab==='deputies'&&isAdmin()){document.getElementById('tDeputies').style.display='block';renderDeputies();}
   if(tab==='moders'&&isAdmin()){document.getElementById('tModers').style.display='block';renderMods();}
-  if(tab==='maint'&&isDeputy()){document.getElementById('tMaint').style.display='block';renderMaintAdmin();}
+  if(tab==='maint'&&isDeputy()){
+    document.getElementById('tMaint').style.display='block';renderMaintAdmin();
+    document.getElementById('rulesInp').value=siteSettings.rulesText||'';
+    document.getElementById('announceInp').value=siteSettings.announcement||'';
+    document.getElementById('announceColorInp').value=siteSettings.announceColor||'#7b61ff';
+  }
+  if(tab==='reports'&&isModer()){document.getElementById('tReports').style.display='block';renderReportsAdmin();}
+  if(tab==='promo'&&isDeputy()){document.getElementById('tPromo').style.display='block';}
+}
+async function saveRules(){
+  siteSettings.rulesText=document.getElementById('rulesInp').value.trim();
+  await fsSet('settings','site',siteSettings);
+  notify('✅ Правила сохранены','ok');
+}
+async function saveAnnouncement(){
+  siteSettings.announcement=document.getElementById('announceInp').value.trim();
+  siteSettings.announceColor=document.getElementById('announceColorInp').value;
+  await fsSet('settings','site',siteSettings);
+  renderAnnouncement();
+  notify(siteSettings.announcement?'✅ Объявление сохранено':'✅ Объявление скрыто','ok');
 }
 function renderAdmStats(){
   const p=localApps.filter(a=>a.st==='pending').length;document.getElementById('appCt').textContent=p;
@@ -2233,15 +2586,30 @@ function renderUsers(){
       const isPremU=hasPurchase(u.id,'premium');
       return `<div class="ur">
         <div class="uav2" style="cursor:pointer;" onclick="showUserProfile('${u.id}')">${u.av?`<img src="${u.av}" alt="">`:u.name.charAt(0).toUpperCase()}</div>
-        <div><div style="font-weight:500;">${u.name}${hasPurchase(u.id,'verified')?`<span class="vico" style="margin-left:4px;width:14px;height:14px;font-size:8px;">✓</span>`:''}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div>
+        <div><div style="font-weight:500;">${u.name}${hasPurchase(u.id,'verified')?`<span class="vico" style="margin-left:4px;width:14px;height:14px;font-size:8px;">✓</span>`:''}${u.banned?' <span style="color:var(--err);font-size:11px;">🚫 БАН</span>':''}${u.muted?' <span style="color:var(--m);font-size:11px;">🔇 мут</span>':''}</div><div style="font-size:12px;color:var(--m);">@${u.un}</div></div>
         <div class="cr"><span class="rb ${isPremU?'rprem':roleClass(u.role)}">${isPremU?'⭐':roleName(u.role)}</span></div>
         <div class="cd" style="font-size:12px;color:var(--gold);font-weight:700;">🪙 ${u.coins||0}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;">
           ${isAdmin()&&u.id!==cu.id&&u.role!=='admin'?getRoleActions(u):''}
           ${isAdmin()?`<button class="btn bgold bsm" onclick="openGiveCoins('${u.id}')" title="Начислить монеты">🪙</button>`:''}
+          ${isModer()&&u.id!==cu.id&&u.role!=='admin'?`<button class="btn ${u.muted?'bgh':'bdn'} bsm" onclick="toggleMute('${u.id}')" title="Мут">${u.muted?'🔊':'🔇'}</button>`:''}
+          ${isAdmin()&&u.id!==cu.id&&u.role!=='admin'?`<button class="btn ${u.banned?'bgh':'bdn'} bsm" onclick="toggleBan('${u.id}')" title="Бан">${u.banned?'✅':'🚫'}</button>`:''}
         </div>
       </div>`;
     }).join('');
+}
+async function toggleBan(id){
+  const u=localUsers.find(x=>x.id===id);if(!u)return;
+  if(!u.banned){const reason=prompt('Причина бана (необязательно):','')||'';u.banned=true;u.banReason=reason;}
+  else{u.banned=false;u.banReason='';}
+  await fsUpdate('users',id,{banned:u.banned,banReason:u.banReason||''});
+  renderUsers();notify(u.banned?'🚫 Пользователь забанен':'✅ Бан снят',u.banned?'err':'ok');
+}
+async function toggleMute(id){
+  const u=localUsers.find(x=>x.id===id);if(!u)return;
+  u.muted=!u.muted;
+  await fsUpdate('users',id,{muted:u.muted});
+  renderUsers();notify(u.muted?'🔇 Пользователь замучен':'🔊 Мут снят',u.muted?'err':'ok');
 }
 function getRoleActions(u){
   if(u.role==='deputy')return`<button class="btn bdn bsm" onclick="setRole('${u.id}','${u.un}','user')">Снять</button>`;
@@ -2283,18 +2651,23 @@ function renderTop(period){
   const scored=localCat.map(it=>{
     const score=getTotalReactions(it);
     return{...it,score};
-  }).filter(it=>it.score>0).sort((a,b)=>b.score-a.score).slice(0,20);
-  if(!scored.length){list.innerHTML=`<div class="empty"><div class="ei">📊</div><h3>Нет данных</h3><p>Ставьте реакции на карточки!</p></div>`;return;}
-  const maxScore=scored[0]?.score||1;const medals=['🥇','🥈','🥉'];
-  list.innerHTML=scored.map((it,i)=>{
+  }).filter(it=>it.score>0).sort((a,b)=>b.score-a.score);
+  const vip=scored.filter(it=>hasPurchase(it.uid,'vip_top_slot'));
+  const rest=scored.filter(it=>!hasPurchase(it.uid,'vip_top_slot')).slice(0,20-vip.length);
+  const ordered=[...vip,...rest];
+  if(!ordered.length){list.innerHTML=`<div class="empty"><div class="ei">📊</div><h3>Нет данных</h3><p>Ставьте реакции на карточки!</p></div>`;return;}
+  const maxScore=ordered[0]?.score||1;const medals=['🥇','🥈','🥉'];
+  list.innerHTML=ordered.map((it,i)=>{
     const pur=getUserPurchases(it.uid);const isVerif=pur.includes('verified');const isPrem=pur.includes('premium');
-    const rankCls=i<3?`top-${i+1}`:'';const rankLabel=i<3?medals[i]:`<span class="top-rank-n">#${i+1}</span>`;
+    const isVip=hasPurchase(it.uid,'vip_top_slot');
+    const ownerU=localUsers.find(u=>u.id===it.uid);
+    const rankCls=(i<3&&!isVip)?`top-${i+1}`:'';const rankLabel=(i<3&&!isVip)?medals[i]:`<span class="top-rank-n">#${i+1}</span>`;
     const barW=Math.round((it.score/maxScore)*100);
-    return `<div class="top-item ${rankCls}" style="animation-delay:${i*.04}s;" onclick="showProf('${it.id}')">
-      <div class="top-rank">${rankLabel}</div>
+    return `<div class="top-item ${rankCls}${isVip?' vip-top-row':''}" style="animation-delay:${i*.04}s;" onclick="showProf('${it.id}')">
+      <div class="top-rank">${isVip?'👑':rankLabel}</div>
       <div class="top-av">${it.av?`<img src="${it.av}" alt="">`:(it.em||'🙂')}</div>
       <div class="top-info">
-        <div class="top-name">${it.name}${isVerif?`<span class="vico">✓</span>`:''}${isPrem?`<span class="rb rprem" style="font-size:9px;">⭐</span>`:''}</div>
+        <div class="top-name">${styledNameHtml(ownerU,it.name)}${isVerif?`<span class="vico">✓</span>`:''}${isPrem?`<span class="rb rprem" style="font-size:9px;">⭐</span>`:''}</div>
         <div class="top-cat">${it.cat}</div>
         <div class="top-bar-wrap"><div class="top-bar" style="width:${barW}%;"></div></div>
       </div>
@@ -2368,9 +2741,16 @@ async function joinGiveaway(id){
   if(!cu){showAuth();return;}
   const gw=localGiveaways.find(x=>x.id===id);if(!gw)return;
   if((gw.participants||[]).includes(cu.id)){notify('Ты уже участвуешь!','err');return;}
-  gw.participants=[...(gw.participants||[]),cu.id];
+  const entries=[cu.id];
+  const extraTickets=cu.giveawayTickets||0;
+  if(extraTickets>0){
+    for(let i=0;i<extraTickets;i++)entries.push(cu.id);
+    cu.giveawayTickets=0;const u=localUsers.find(x=>x.id===cu.id);if(u)u.giveawayTickets=0;
+    fsUpdate('users',cu.id,{giveawayTickets:0});
+  }
+  gw.participants=[...(gw.participants||[]),...entries];
   await fsUpdate('giveaways',id,{participants:gw.participants});
-  renderGiveaways();notify('🎯 Ты участвуешь!','ok');
+  renderGiveaways();notify(extraTickets>0?`🎯 Ты участвуешь с ${entries.length} билетами!`:'🎯 Ты участвуешь!','ok');
 }
 async function endGiveaway(id){
   const gw=localGiveaways.find(x=>x.id===id);if(!gw)return;
@@ -2387,6 +2767,19 @@ async function delGiveaway(id){await fsDel('giveaways',id);localGiveaways=localG
 
 // ── ФОРУМ ────────────────────────────────────────────────────────────────────
 const FORUM_COLORS=['#00e5ff','#ff3cac','#7b61ff','#ffd700','#00ff88','#ff9500','#ff4455','#4a5c7a','#e040fb','#26c6da'];
+
+// ── СТИЛИЗОВАННОЕ ИМЯ (косметика магазина: цвет/шрифт/статус/корона) ───────
+function styledNameHtml(u,fallbackName){
+  const displayName=fallbackName||(u&&u.name)||'?';
+  if(!u)return escHtml(displayName);
+  const styleParts=[];
+  if(u.nameColor)styleParts.push(`color:${u.nameColor}`);
+  if(u.nameFont)styleParts.push(`font-family:${u.nameFont}`);
+  const crown=hasPurchase(u.id,'gold_crown')?'👑 ':'';
+  const statusE=u.statusEmoji?` ${escHtml(u.statusEmoji)}`:'';
+  const manualV=hasPurchase(u.id,'verified_manual')?' <span title="Проверен вручную" style="font-size:12px;">🏅</span>':'';
+  return `${crown}<span${styleParts.length?` style="${styleParts.join(';')}"`:''}>${escHtml(displayName)}</span>${statusE}${manualV}`;
+}
 
 function forumBadge(u){
   if(!u||!u.forumRank)return'';
@@ -2455,12 +2848,15 @@ async function openForumTopic(topicId){
       <div class="ftopic-meta" style="margin-bottom:10px;">
         <span style="font-weight:700;color:var(--t);cursor:pointer;" onclick="openForumProfile('${t.authorId}')">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span><span>·</span><span>👁 ${t.views||0}</span>
       </div>
-      <div class="pgtit" style="font-size:22px;margin-bottom:12px;">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
-      <div class="freply-body">${escHtml(t.body)}</div>
+      <div class="pgtit" style="font-size:22px;margin-bottom:12px;">${pinShow?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
+      <div class="freply-body">${renderMarkdown(t.body)}</div>
+      ${t.imgUrl?`<img src="${t.imgUrl}" alt="" style="max-width:100%;border-radius:12px;margin-top:12px;">`:''}
+      ${t.editHistory&&t.editHistory.length?`<button class="btn bgh bsm" style="margin-top:8px;" onclick='showEditHistory(${JSON.stringify(t.editHistory).replace(/'/g,"&apos;")})'>🕘 История правок (${t.editHistory.length})</button>`:''}
       <div style="display:flex;gap:6px;margin-top:16px;flex-wrap:wrap;align-items:center;">
         <button class="btn bsm ${cu&&t.likes&&t.likes[cu.id]?'bpr':'bgh'}" id="forumLikeBtn" onclick="toggleTopicLike('${t.id}')">🤍 0</button>
         ${canEdit?`<button class="btn bgh bsm" onclick="editForumTopicPrompt('${t.id}')">✏️ Редактировать</button>`:''}
-        ${isModer()?`<button class="btn bgh bsm" onclick="toggleTopicPin('${t.id}')">${t.pinned?'📌 Открепить':'📌 Закрепить'}</button>
+        ${cu&&!canEdit?`<button class="btn bgh bsm" onclick="reportContent('forumTopic','${t.id}')">🚩 Пожаловаться</button>`:''}
+        ${isModer()?`<button class="btn bgh bsm" onclick="toggleTopicPin('${t.id}')">${isEffectivelyPinned(t)?'📌 Открепить':'📌 Закрепить'}</button>
         <button class="btn bgh bsm" onclick="toggleTopicLock('${t.id}')">${t.locked?'🔓 Открыть':'🔒 Закрыть'}</button>
         <button class="btn bdn bsm" onclick="deleteForumTopic('${t.id}')">🗑 Удалить тему</button>`:''}
       </div>
@@ -2484,9 +2880,10 @@ async function renderForumReplies(topicId){
         <span class="freply-name" style="cursor:pointer;" onclick="openForumProfile('${r.authorId}')">${escHtml(r.authorName||'?')}</span>${forumBadge(au)}
         <span class="freply-time">${timeAgoF(r.ts)}</span>
         ${(cu&&r.authorId===cu.id)?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="editForumReplyPrompt('${r.id}','${topicId}')">✏️</button>`:''}
+        ${(cu&&r.authorId!==cu.id&&!isModer())?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="reportContent('forumReply','${r.id}')">🚩</button>`:''}
         ${(isModer()||(cu&&r.authorId===cu.id))?`<button class="btn bdn bsm" style="padding:3px 8px;margin-left:6px;" onclick="deleteForumReply('${r.id}','${topicId}')">🗑</button>`:''}
       </div>
-      <div class="freply-body">${escHtml(r.body)}</div>
+      <div class="freply-body">${renderMarkdown(r.body)}</div>
     </div>`;
   }).join('');
 }
@@ -2495,31 +2892,48 @@ function backToForumCat(){if(curForumCatId)showForumCatPage(curForumCatId);else 
 function openNewTopicModal(){
   if(!cu){showAuth();return;}
   document.getElementById('ntTitle').value='';document.getElementById('ntBody').value='';
+  document.getElementById('ntTitle').maxLength=hasPurchase(cu.id,'char_limit_boost')?200:120;
+  const gifBox=document.getElementById('ntGifBox');
+  if(gifBox){gifBox.style.display=hasPurchase(cu.id,'gif_attach')?'block':'none';document.getElementById('ntGifUrl').value='';}
   oOv('newTopicOv');
+  loadDraft();
 }
 async function createForumTopic(){
   if(!cu){showAuth();return;}
+  if(cu.muted){notify('🔇 Вы в муте — писать нельзя','err');return;}
   const title=document.getElementById('ntTitle').value.trim();
   const bodyText=document.getElementById('ntBody').value.trim();
   if(!title||!bodyText){notify('Заполните заголовок и текст!','err');return;}
   if(!curForumCatId){notify('Раздел не выбран','err');return;}
+  if(containsBadWords(title)||containsBadWords(bodyText)){notify('❌ Текст содержит запрещённые слова','err');return;}
+  if(!isModer()&&cu.lastTopicTs&&Date.now()-cu.lastTopicTs<120000){
+    notify(`⏱ Подождите ${Math.ceil((120000-(Date.now()-cu.lastTopicTs))/1000)}с перед новой темой`,'err');return;
+  }
   const data={catId:curForumCatId,title,body:bodyText,authorId:cu.id,authorName:cu.name,ts:Date.now(),pinned:false,locked:false,repliesCount:0};
+  const gifUrl=document.getElementById('ntGifUrl')?document.getElementById('ntGifUrl').value.trim():'';
+  if(gifUrl&&hasPurchase(cu.id,'gif_attach'))data.imgUrl=gifUrl;
   const newId=await fsAdd('forumTopics',data);
   if(!newId){notify('❌ Не удалось создать тему','err');return;}
+  processMentions(bodyText,`тема "${title}"`,cu);
+  clearDraft();
+  cu.lastTopicTs=Date.now();fsUpdate('users',cu.id,{lastTopicTs:cu.lastTopicTs});
   cOvId('newTopicOv');notify('✅ Тема создана!','ok');
   const cat=localForumCat.find(c=>c.id===curForumCatId);if(cat){cat.topicsCount=(cat.topicsCount||0)+1;fsUpdate('forumCategories',cat.id,{topicsCount:cat.topicsCount});}
   showForumCatPage(curForumCatId);
 }
 async function postForumReply(){
   if(!cu){showAuth();return;}
+  if(cu.muted){notify('🔇 Вы в муте — писать нельзя','err');return;}
   if(!curForumTopic){return;}
   if(curForumTopic.locked){notify('🔒 Тема закрыта','err');return;}
   const inp=document.getElementById('forumReplyInp');
   const bodyText=inp.value.trim();
   if(!bodyText){notify('Введите текст ответа!','err');return;}
+  if(containsBadWords(bodyText)){notify('❌ Текст содержит запрещённые слова','err');return;}
   const data={topicId:curForumTopic.id,body:bodyText,authorId:cu.id,authorName:cu.name,ts:Date.now()};
   const newId=await fsAdd('forumReplies',data);
   if(!newId){notify('❌ Не удалось отправить','err');return;}
+  processMentions(bodyText,`ответ в теме "${curForumTopic.title}"`,cu);
   inp.value='';
   const newCount=(curForumTopic.repliesCount||0)+1;
   curForumTopic.repliesCount=newCount;
@@ -2620,7 +3034,323 @@ async function removeForumRank(id){
   renderForumRanksAdmin();notify('Краска снята','ok');
 }
 
-// ── ОБНОВЛЕНИЕ 1: ТЕХ.РАБОТЫ ────────────────────────────────────────────────
+// ── ОБНОВЛЕНИЕ: АВТОМОДЕРАЦИЯ МАТА ──────────────────────────────────────────
+const BAD_WORDS=['хуй','хуе','хуи','пизд','ебат','еба','ёба','сук','бляд','бля','мраз','гандон','долбоеб','долбоём','мудак'];
+function containsBadWords(text){
+  const low=text.toLowerCase();
+  return BAD_WORDS.some(w=>low.includes(w));
+}
+// ── ОБНОВЛЕНИЕ: ПРИВЕТСТВИЕ НОВЫМ ПОЛЬЗОВАТЕЛЯМ ─────────────────────────────
+function showWelcomeModal(){
+  document.getElementById('welcomeBody').innerHTML=`
+    <div style="text-align:center;padding:10px 0 10px;">
+      <div style="font-size:52px;margin-bottom:14px;">🎉</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:10px;">Добро пожаловать в TK Fame List!</div>
+      <div style="font-size:14px;color:var(--m);line-height:1.7;text-align:left;margin-bottom:20px;">
+        Вот с чего можно начать:<br>
+        📰 <b>Посты</b> — новости и объявления сообщества<br>
+        💬 <b>Форум</b> — обсуждения, вопросы, предложения<br>
+        🛒 <b>Магазин</b> — трать монеты на косметику и привилегии<br>
+        📝 <b>Заявка</b> — попади в каталог Fame List<br>
+        🏆 <b>Топ</b> — рейтинг самых популярных участников
+      </div>
+      <button class="btn bpr" style="width:100%;justify-content:center;" onclick="closeWelcomeModal()">Погнали! 🚀</button>
+    </div>`;
+  oOv('userWelcomeOv');
+}
+function closeWelcomeModal(){
+  cOvId('userWelcomeOv');
+  if(cu){cu.welcomed=true;fsUpdate('users',cu.id,{welcomed:true});}
+}
+// ── ОБНОВЛЕНИЕ: ФОРМА ОБРАТНОЙ СВЯЗИ ────────────────────────────────────────
+async function submitFeedback(){
+  if(!cu){showAuth();return;}
+  const text=document.getElementById('feedbackInp').value.trim();
+  if(!text){notify('Опишите вашу идею!','err');return;}
+  const ok=await fsAdd('feedback',{text,authorId:cu.id,authorName:cu.name,ts:Date.now(),status:'new'});
+  if(!ok){notify('❌ Ошибка отправки','err');return;}
+  document.getElementById('feedbackInp').value='';
+  cOvId('feedbackOv');notify('💡 Спасибо! Идея отправлена администрации','ok');
+}
+async function renderFeedbackAdmin(){
+  const t=document.getElementById('feedbackTab');if(!t)return;
+  t.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const items=await fsGetAll('feedback');
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!items.length){t.innerHTML=`<div class="empty"><div class="ei">💡</div><h3>Пока нет предложений</h3></div>`;return;}
+  t.innerHTML=items.map(f=>`<div class="ai2" style="margin-bottom:10px;flex-direction:column;align-items:flex-start;padding:14px;">
+    <div style="font-size:12px;color:var(--m);margin-bottom:6px;">${escHtml(f.authorName||'?')} · ${timeAgoF(f.ts)}</div>
+    <div style="font-size:14px;line-height:1.5;">${escHtml(f.text)}</div>
+  </div>`).join('');
+}
+// ── ОБНОВЛЕНИЕ: ПОДПИСКИ НА ПОЛЬЗОВАТЕЛЕЙ ───────────────────────────────────
+async function toggleFollow(uid){
+  if(!cu){showAuth();return;}
+  if(uid===cu.id){notify('Нельзя подписаться на себя','err');return;}
+  const following=cu.following||[];
+  const isF=following.includes(uid);
+  const newFollowing=isF?following.filter(x=>x!==uid):[...following,uid];
+  cu.following=newFollowing;
+  const u=localUsers.find(x=>x.id===cu.id);if(u)u.following=newFollowing;
+  await fsUpdate('users',cu.id,{following:newFollowing});
+  if(!isF)addNotification(uid,`👤 ${cu.name} подписался(-ась) на вас`,'ok');
+  notify(isF?'Отписка':'✅ Вы подписались','ok');
+  showUserProfile(uid);
+}
+function followerCount(uid){return localUsers.filter(u=>(u.following||[]).includes(uid)).length;}
+
+// ── ОБНОВЛЕНИЕ: УПОМИНАНИЯ @USERNAME ────────────────────────────────────────
+function processMentions(text,sourceLabel,fromUser){
+  const matches=[...text.matchAll(/@([a-zA-Z0-9_]{3,32})/g)];
+  const seen=new Set();
+  matches.forEach(m=>{
+    const un=m[1].toLowerCase();
+    if(seen.has(un))return;seen.add(un);
+    const target=localUsers.find(u=>u.un===un);
+    if(target&&target.id!==fromUser.id)addNotification(target.id,`💬 ${fromUser.name} упомянул(а) вас: ${sourceLabel}`,'reply');
+  });
+}
+
+// ── ОБНОВЛЕНИЕ: ПОДАРКИ МОНЕТ МЕЖДУ ПОЛЬЗОВАТЕЛЯМИ ──────────────────────────
+function openGiftCoins(uid){
+  if(!cu){showAuth();return;}
+  if(uid===cu.id){notify('Нельзя подарить монеты себе','err');return;}
+  const target=localUsers.find(u=>u.id===uid);if(!target)return;
+  const amtStr=prompt(`Сколько монет подарить ${target.name}? (у вас 🪙 ${cu.coins||0})`,'50');
+  const amt=parseInt(amtStr)||0;
+  if(amt<=0){return;}
+  if(amt>(cu.coins||0)){notify('Недостаточно монет!','err');return;}
+  if(cu.lastGiftTs&&Date.now()-cu.lastGiftTs<60000){notify('⏱ Подождите минуту между подарками','err');return;}
+  giftCoins(uid,amt,target);
+}
+async function giftCoins(uid,amt,target){
+  const newCoins=(cu.coins||0)-amt;
+  cu.coins=newCoins;cu.lastGiftTs=Date.now();
+  const me=localUsers.find(x=>x.id===cu.id);if(me){me.coins=newCoins;me.lastGiftTs=cu.lastGiftTs;}
+  await fsUpdate('users',cu.id,{coins:newCoins,lastGiftTs:cu.lastGiftTs});
+  const tCoins=(target.coins||0)+amt;
+  target.coins=tCoins;
+  await fsUpdate('users',uid,{coins:tCoins});
+  await addNotification(uid,`🎁 ${cu.name} подарил(а) вам ${amt} монет!`,'ok');
+  updateNav();notify(`🎁 Подарено ${amt} монет!`,'ok');
+}
+
+// ── ОБНОВЛЕНИЕ: ДНИ РОЖДЕНИЯ АККАУНТА ────────────────────────────────────────
+function checkAccountBirthday(u){
+  if(!u.joined)return;
+  const joinedDate=new Date(u.joined);
+  const now=new Date();
+  if(joinedDate.getMonth()===now.getMonth()&&joinedDate.getDate()===now.getDate()){
+    const years=now.getFullYear()-joinedDate.getFullYear();
+    if(years>0){
+      const todayStr=now.toISOString().split('T')[0];
+      if(u.lastBirthdayNotif!==todayStr){
+        addNotification(u.id,`🎂 Вы с TK Fame List уже ${years} ${years===1?'год':years<5?'года':'лет'}! Бонус: +100 монет 🪙`,'ok');
+        const newCoins=(u.coins||0)+100;
+        fsUpdate('users',u.id,{coins:newCoins,lastBirthdayNotif:todayStr});
+        u.coins=newCoins;u.lastBirthdayNotif=todayStr;
+        if(cu&&cu.id===u.id){cu.coins=newCoins;updateNav();}
+      }
+    }
+  }
+}
+
+// ── ОБНОВЛЕНИЕ: ЕЖЕДНЕВНЫЙ СТРИК ВХОДА ───────────────────────────────────────
+async function checkLoginStreak(u){
+  const today=new Date().toISOString().split('T')[0];
+  if(u.lastLoginDate===today)return;
+  const yesterday=new Date(Date.now()-86400000).toISOString().split('T')[0];
+  const newStreak=u.lastLoginDate===yesterday?(u.streak||0)+1:1;
+  const bonus=Math.min(10+newStreak*5,100);
+  const newCoins=(u.coins||0)+bonus;
+  u.streak=newStreak;u.lastLoginDate=today;u.coins=newCoins;
+  await fsUpdate('users',u.id,{streak:newStreak,lastLoginDate:today,coins:newCoins});
+  if(cu&&cu.id===u.id)updateNav();
+  notify(`🔥 Стрик ${newStreak} дней! +${bonus}🪙`,'ok');
+}
+
+// ── ОБНОВЛЕНИЕ: ЖАЛОБЫ НА КОНТЕНТ ────────────────────────────────────────────
+async function reportContent(type,id,extra){
+  if(!cu){showAuth();return;}
+  const reason=prompt('Причина жалобы:','');
+  if(!reason||!reason.trim())return;
+  await fsAdd('reports',{type,targetId:id,reason:reason.trim(),reporterId:cu.id,reporterName:cu.name,ts:Date.now(),status:'new',...extra});
+  notify('🚩 Жалоба отправлена модераторам','ok');
+}
+async function renderReportsAdmin(){
+  const t=document.getElementById('reportsTab');if(!t)return;
+  t.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const items=await fsGetAll('reports');
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!items.length){t.innerHTML=`<div class="empty"><div class="ei">🚩</div><h3>Жалоб нет</h3></div>`;return;}
+  t.innerHTML=items.map(r=>`<div class="ai2" style="margin-bottom:10px;flex-direction:column;align-items:flex-start;padding:14px;">
+    <div style="font-size:12px;color:var(--m);margin-bottom:6px;">${escHtml(r.reporterName||'?')} · ${timeAgoF(r.ts)} · тип: ${escHtml(r.type)}</div>
+    <div style="font-size:14px;line-height:1.5;margin-bottom:8px;">${escHtml(r.reason)}</div>
+    <button class="btn bgh bsm" onclick="dismissReport('${r.id}')">✅ Рассмотрено</button>
+  </div>`).join('');
+}
+async function dismissReport(id){await fsDel('reports',id);renderReportsAdmin();notify('✅ Жалоба закрыта','ok');}
+
+// ── ОБНОВЛЕНИЕ: ЧЕРНОВИКИ ТЕМ ────────────────────────────────────────────────
+let draftSaveTimer=null;
+function autosaveDraft(){
+  if(!cu||!curForumCatId)return;
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer=setTimeout(()=>{
+    const title=document.getElementById('ntTitle').value;
+    const bodyText=document.getElementById('ntBody').value;
+    if(!title&&!bodyText)return;
+    fsSet('drafts',cu.id+'_'+curForumCatId,{title,body:bodyText,catId:curForumCatId,ts:Date.now()});
+  },800);
+}
+async function loadDraft(){
+  if(!cu||!curForumCatId)return;
+  const d=await fsGetDoc('drafts',cu.id+'_'+curForumCatId);
+  if(d&&(d.title||d.body)){
+    document.getElementById('ntTitle').value=d.title||'';
+    document.getElementById('ntBody').value=d.body||'';
+    notify('📝 Восстановлен черновик','ok');
+  }
+}
+function clearDraft(){if(cu&&curForumCatId)fsDel('drafts',cu.id+'_'+curForumCatId);}
+
+// ── ОБНОВЛЕНИЕ: MARKDOWN В ТЕМАХ/ОТВЕТАХ ─────────────────────────────────────
+function renderMarkdown(text){
+  let h=escHtml(text);
+  h=h.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  h=h.replace(/\*(.+?)\*/g,'<i>$1</i>');
+  h=h.replace(/`(.+?)`/g,'<code style="background:var(--s2);padding:1px 6px;border-radius:5px;">$1</code>');
+  h=h.replace(/^&gt; (.+)$/gm,'<div style="border-left:3px solid var(--a3);padding-left:10px;color:var(--m);margin:4px 0;">$1</div>');
+  h=h.replace(/^- (.+)$/gm,'• $1');
+  h=h.replace(/\n/g,'<br>');
+  return h;
+}
+
+// ── ОБНОВЛЕНИЕ: КТО СЕЙЧАС ОНЛАЙН ────────────────────────────────────────────
+let presenceInterval=null;
+function startPresenceHeartbeat(){
+  if(!cu||presenceInterval)return;
+  const beat=()=>fsUpdate('users',cu.id,{lastSeen:Date.now()});
+  beat();presenceInterval=setInterval(beat,60000);
+}
+async function showOnlineNow(){
+  oOv('onlineNowOv');
+  const body=document.getElementById('onlineNowBody');
+  const now=Date.now();
+  const online=localUsers.filter(u=>u.lastSeen&&now-u.lastSeen<5*60000).sort((a,b)=>(b.lastSeen||0)-(a.lastSeen||0));
+  if(!online.length){body.innerHTML=`<div class="empty"><div class="ei">😴</div><h3>Сейчас никого нет</h3></div>`;return;}
+  body.innerHTML=online.map(u=>`<div class="ftopic-row" style="cursor:pointer;" onclick="cOvId('onlineNowOv');showUserProfile('${u.id}')">
+    ${fUserAvHtml(u,'ftopic-av',false)}
+    <div class="ftopic-body"><div class="ftopic-title">${styledNameHtml(u)}${forumBadge(u)}</div><div class="ftopic-meta"><span style="color:var(--ok);">🟢 онлайн</span></div></div>
+  </div>`).join('');
+}
+
+// ── ОБНОВЛЕНИЕ: ИСТОРИЯ ПРАВОК ───────────────────────────────────────────────
+function pushEditHistory(oldBody){
+  return{oldBody,ts:Date.now()};
+}
+function showEditHistory(historyArr){
+  if(!historyArr||!historyArr.length){notify('История правок пуста','ok');return;}
+  const txt=historyArr.map((h,i)=>`Версия ${i+1} (${new Date(h.ts).toLocaleString('ru')}):\n${h.oldBody}`).join('\n\n---\n\n');
+  alert(txt);
+}
+
+// ── ОБНОВЛЕНИЕ: ПРОМОКОДЫ ────────────────────────────────────────────────────
+async function redeemPromo(){
+  if(!cu){showAuth();return;}
+  const code=(document.getElementById('promoInp')?.value||'').trim().toUpperCase();
+  if(!code){notify('Введите промокод!','err');return;}
+  const promo=await fsGetDoc('promocodes',code);
+  if(!promo){notify('❌ Промокод не найден','err');return;}
+  const usedBy=promo.usedBy||[];
+  if(usedBy.includes(cu.id)){notify('Вы уже использовали этот код','err');return;}
+  if(promo.maxUses&&usedBy.length>=promo.maxUses){notify('❌ Лимит использований исчерпан','err');return;}
+  const newCoins=(cu.coins||0)+(promo.coins||0);
+  cu.coins=newCoins;const u=localUsers.find(x=>x.id===cu.id);if(u)u.coins=newCoins;
+  await fsUpdate('users',cu.id,{coins:newCoins});
+  await fsUpdate('promocodes',code,{usedBy:[...usedBy,cu.id]});
+  updateNav();document.getElementById('promoInp').value='';
+  notify(`✅ Промокод активирован! +${promo.coins}🪙`,'ok');
+}
+async function adminCreatePromo(){
+  const code=(document.getElementById('promoCodeInp').value||'').trim().toUpperCase();
+  const coins=parseInt(document.getElementById('promoCoinsInp').value)||0;
+  const maxUses=parseInt(document.getElementById('promoMaxInp').value)||0;
+  if(!code||!coins){notify('Заполните код и сумму!','err');return;}
+  await fsSet('promocodes',code,{coins,maxUses:maxUses||null,usedBy:[],ts:Date.now()});
+  notify(`✅ Промокод ${code} создан`,'ok');
+  document.getElementById('promoCodeInp').value='';document.getElementById('promoCoinsInp').value='';document.getElementById('promoMaxInp').value='';
+}
+
+// ── ОБНОВЛЕНИЕ: КАЛЕНДАРЬ СОБЫТИЙ ────────────────────────────────────────────
+async function showEventsCalendar(){
+  oOv('eventsOv');
+  const body=document.getElementById('eventsBody');
+  body.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const events=await fsGetAll('events');
+  events.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const upcoming=events.filter(e=>e.date>=new Date().toISOString().split('T')[0]);
+  const adminForm=isDeputy()?`<div class="fcard" style="margin-bottom:16px;">
+    <div class="fg"><label class="fl">Название события</label><input class="fi" id="evTitle" placeholder="Розыгрыш призов"/></div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1;"><label class="fl">Дата</label><input class="fi" id="evDate" type="date"/></div>
+      <div class="fg" style="flex:1;"><label class="fl">Иконка</label><input class="fi" id="evIcon" placeholder="🎉" maxlength="4"/></div>
+    </div>
+    <div class="fg"><label class="fl">Описание</label><input class="fi" id="evDesc" placeholder="Краткое описание"/></div>
+    <button class="btn bpr" onclick="addEvent()">➕ Добавить событие</button>
+  </div>`:'';
+  body.innerHTML=adminForm+(upcoming.length?upcoming.map(e=>`<div class="ftopic-row" style="cursor:default;">
+    <div class="ftopic-av">${e.icon||'📅'}</div>
+    <div class="ftopic-body"><div class="ftopic-title">${escHtml(e.title)}</div><div class="ftopic-meta"><span>${new Date(e.date).toLocaleDateString('ru',{day:'numeric',month:'long'})}</span>${e.desc?`<span>· ${escHtml(e.desc)}</span>`:''}</div></div>
+    ${isDeputy()?`<button class="btn bdn bsm" onclick="delEvent('${e.id}')">🗑</button>`:''}
+  </div>`).join(''):`<div class="empty"><div class="ei">📅</div><h3>Событий пока нет</h3></div>`);
+}
+async function addEvent(){
+  const title=document.getElementById('evTitle').value.trim();
+  const date=document.getElementById('evDate').value;
+  const icon=document.getElementById('evIcon').value.trim()||'📅';
+  const desc=document.getElementById('evDesc').value.trim();
+  if(!title||!date){notify('Заполните название и дату!','err');return;}
+  await fsAdd('events',{title,date,icon,desc,ts:Date.now()});
+  notify('✅ Событие добавлено','ok');showEventsCalendar();
+}
+async function delEvent(id){await fsDel('events',id);showEventsCalendar();notify('🗑 Удалено','err');}
+
+// ── ОБНОВЛЕНИЕ: ПРАВИЛА СООБЩЕСТВА ──────────────────────────────────────────
+function showRules(){
+  document.getElementById('rulesBody').textContent=siteSettings.rulesText||'Правила ещё не добавлены администрацией.';
+  oOv('rulesOv');
+}
+// ── ОБНОВЛЕНИЕ: ЗАКРЕПЛЁННОЕ ОБЪЯВЛЕНИЕ НА ГЛАВНОЙ ──────────────────────────
+function renderAnnouncement(){
+  const box=document.getElementById('announceBox');if(!box)return;
+  if(!siteSettings.announcement){box.innerHTML='';return;}
+  box.innerHTML=`<div class="fcard" style="margin-bottom:22px;border-color:${siteSettings.announceColor||'#7b61ff'};">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="font-size:22px;">📢</div>
+      <div style="white-space:pre-wrap;line-height:1.6;font-size:14px;">${escHtml(siteSettings.announcement)}</div>
+    </div>
+  </div>`;
+}
+// ── ОБНОВЛЕНИЕ: ЛИДЕРБОРД ФОРУМА ────────────────────────────────────────────
+async function showForumLeaderboard(){
+  oOv('forumLbOv');
+  const body=document.getElementById('forumLbBody');
+  body.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const [topics,replies]=await Promise.all([fsGetAll('forumTopics'),fsGetAll('forumReplies')]);
+  const scoreMap={};
+  topics.forEach(t=>{scoreMap[t.authorId]=(scoreMap[t.authorId]||0)+3;});
+  replies.forEach(r=>{scoreMap[r.authorId]=(scoreMap[r.authorId]||0)+1;});
+  const ranked=Object.entries(scoreMap).map(([uid,score])=>({uid,score,u:localUsers.find(x=>x.id===uid)})).filter(x=>x.u).sort((a,b)=>b.score-a.score).slice(0,15);
+  if(!ranked.length){body.innerHTML=`<div class="empty"><div class="ei">🏆</div><h3>Пока нет активности</h3></div>`;return;}
+  const medals=['🥇','🥈','🥉'];
+  body.innerHTML=ranked.map((r,i)=>`<div class="ftopic-row" style="cursor:pointer;" onclick="cOvId('forumLbOv');openForumProfile('${r.uid}')">
+    <div style="width:28px;text-align:center;font-weight:800;">${i<3?medals[i]:'#'+(i+1)}</div>
+    ${fUserAvHtml(r.u,'ftopic-av',false)}
+    <div class="ftopic-body"><div class="ftopic-title">${styledNameHtml(r.u)}${forumBadge(r.u)}</div></div>
+    <div class="ftopic-stats"><div><b>${r.score}</b>очков</div></div>
+  </div>`).join('');
+}
 function checkMaintenanceMode(){
   const overlay=document.getElementById('maintOverlay'),banner=document.getElementById('maintBanner');
   const staff=isDeputy();
@@ -2721,8 +3451,9 @@ function editForumTopicPrompt(id){
   const newTitle=prompt('Заголовок темы:',t.title);if(newTitle===null)return;
   const newBody=prompt('Текст темы:',t.body);if(newBody===null)return;
   if(!newTitle.trim()||!newBody.trim()){notify('Поля не могут быть пустыми!','err');return;}
-  t.title=newTitle.trim();t.body=newBody.trim();
-  fsUpdate('forumTopics',id,{title:t.title,body:t.body}).then(ok=>{
+  const history=[...(t.editHistory||[]),pushEditHistory(t.body)];
+  t.title=newTitle.trim();t.body=newBody.trim();t.editHistory=history;
+  fsUpdate('forumTopics',id,{title:t.title,body:t.body,editHistory:history}).then(ok=>{
     if(ok){notify('✅ Тема обновлена','ok');openForumTopic(id);}else notify('❌ Ошибка сохранения','err');
   });
 }
@@ -2746,12 +3477,13 @@ function onForumSearch(v){
 // ── ОБНОВЛЕНИЕ 7: СОРТИРОВКА ТЕМ ─────────────────────────────────────────────
 let forumSortMode='new';
 function setForumSort(mode){forumSortMode=mode;renderForumCatTopics(document.getElementById('forumSearchInp')?.value.trim().toLowerCase()||'');}
+function isEffectivelyPinned(t){return t.pinned&&(!t.pinnedUntil||t.pinnedUntil>Date.now());}
 function sortForumTopics(topics){
   const arr=[...topics];
   if(forumSortMode==='new')arr.sort((a,b)=>(b.ts||0)-(a.ts||0));
   else if(forumSortMode==='popular')arr.sort((a,b)=>(b.repliesCount||0)-(a.repliesCount||0));
   else if(forumSortMode==='likes')arr.sort((a,b)=>topicLikeCount(b)-topicLikeCount(a));
-  arr.sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+  arr.sort((a,b)=>(isEffectivelyPinned(b)?1:0)-(isEffectivelyPinned(a)?1:0));
   return arr;
 }
 function renderForumCatTopics(q){
@@ -2763,10 +3495,12 @@ function renderForumCatTopics(q){
   if(!topics.length){list.innerHTML=`<div class="empty"><div class="ei">📭</div><h3>${q?'Ничего не найдено':'Тем пока нет'}</h3></div>`;return;}
   list.innerHTML=topics.map(t=>{
     const au=localUsers.find(u=>u.id===t.authorId);
-    return`<div class="ftopic-row${t.pinned?' pinned':''}" onclick="openForumTopic('${t.id}')">
+    const pinShow=isEffectivelyPinned(t);
+    const borderColor=au&&au.forumBorder?au.forumBorder:null;
+    return`<div class="ftopic-row${pinShow?' pinned':''}" ${borderColor?`style="border-color:${borderColor};"`:''} onclick="openForumTopic('${t.id}')">
       ${fUserAvHtml(au,'ftopic-av')}
       <div class="ftopic-body">
-        <div class="ftopic-title">${t.pinned?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
+        <div class="ftopic-title">${pinShow?'📌 ':''}${escHtml(t.title)}${t.locked?' 🔒':''}</div>
         <div class="ftopic-meta"><span onclick="event.stopPropagation();openForumProfile('${t.authorId}')" style="cursor:pointer;font-weight:600;">${escHtml(t.authorName||'?')}</span>${forumBadge(au)}<span>·</span><span>${timeAgoF(t.ts)}</span></div>
       </div>
       <div class="ftopic-stats"><div><b>${t.repliesCount||0}</b>ответов</div><div><b>${topicLikeCount(t)}</b>❤️</div><div><b>${t.views||0}</b>👁</div></div>
