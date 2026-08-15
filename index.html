@@ -862,7 +862,9 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
     <div class="fc" onclick="setF('Младший Фейм',this)">🌟 Младший Фейм</div>
     <div class="fc" onclick="setF('Бичи',this)">💀 Бичи</div>
   </div>
+  <div id="liveBannerBox"></div>
   <div id="announceBox"></div>
+  <div id="activityFeedBox"></div>
   <div class="catsec" id="catSect">
     <div class="sechd">Каталог участников</div>
     <div class="cgrid" id="cGrid"><div class="lder" style="grid-column:1/-1;"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div></div>
@@ -901,6 +903,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="posts-page">
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;justify-content:space-between;">
       <button class="btn bgh bsm" onclick="showForumPage()">← Разделы</button>
+      <button class="btn bgh bsm" id="fCatSubBtn" onclick="toggleCatSubscription(curForumCatId)">🔔 Подписаться</button>
       <button class="btn bpr bsm" id="fNewTopicBtn" onclick="openNewTopicModal()">➕ Новая тема</button>
     </div>
     <div class="pgtit" id="fCatTitle">Раздел</div>
@@ -1136,6 +1139,18 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
           <div class="fg"><label class="fl">Цвет рамки</label><input class="fi" id="announceColorInp" type="color" value="#7b61ff" style="height:44px;padding:4px;"/></div>
           <button class="btn bpr" onclick="saveAnnouncement()" style="width:100%;">💾 Сохранить объявление</button>
         </div>
+        <div class="ahd" style="margin-top:32px;"><div class="aptit">🔴 Статус эфира (вручную)</div></div>
+        <div class="fcard">
+          <div style="font-size:12px;color:var(--m);margin-bottom:10px;">Без интеграции с YouTube/Twitch API — включайте баннер вручную, когда начинаете стрим.</div>
+          <div class="fg"><label class="fl">Ссылка на эфир (пусто — скрыть баннер)</label><input class="fi" id="liveUrlInp" placeholder="https://twitch.tv/..."/></div>
+          <div style="display:flex;gap:10px;">
+            <div class="fg" style="flex:1;"><label class="fl">Название</label><input class="fi" id="liveTitleInp" placeholder="Играем с подписчиками"/></div>
+            <div class="fg" style="flex:1;"><label class="fl">Платформа</label><input class="fi" id="livePlatformInp" placeholder="Twitch / YouTube"/></div>
+          </div>
+          <button class="btn bpr" onclick="saveLiveNow()" style="width:100%;">💾 Сохранить</button>
+        </div>
+        <div class="ahd" style="margin-top:32px;"><div class="aptit">📊 Статистика сайта</div></div>
+        <div id="dashboardBox"></div>
       </div>
       <div id="tReports" style="display:none;">
         <div class="ahd"><div class="aptit">🚩 Жалобы на контент</div></div>
@@ -1243,6 +1258,30 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(38px,8vw,80px);font-weight:800;
   <div class="modal lg" onclick="event.stopPropagation()">
     <div class="mhd"><div class="mtit">📅 Календарь событий</div><button class="mx" onclick="cOvId('eventsOv')">✕</button></div>
     <div class="mbody" id="eventsBody"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="globalSearchOv" onclick="cOv(event,'globalSearchOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">🔍 Поиск по сайту</div><button class="mx" onclick="cOvId('globalSearchOv')">✕</button></div>
+    <div class="mbody">
+      <input class="fi" id="globalSearchInp" placeholder="Участники, темы форума, посты..." oninput="onGlobalSearch(this.value)" style="margin-bottom:16px;"/>
+      <div id="globalSearchResults"></div>
+    </div>
+  </div>
+</div>
+
+<div class="ov hidden" id="questsOv" onclick="cOv(event,'questsOv')">
+  <div class="modal lg" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">🎯 Задания</div><button class="mx" onclick="cOvId('questsOv')">✕</button></div>
+    <div class="mbody" id="questsBox"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="auctionOv" onclick="cOv(event,'auctionOv')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhd"><div class="mtit">🏺 Аукцион</div><button class="mx" onclick="cOvId('auctionOv')">✕</button></div>
+    <div class="mbody" id="auctionBody"></div>
   </div>
 </div>
 
@@ -1549,6 +1588,8 @@ async function loadData(){
   siteSettings=s||{maintenance:false,maintenanceMsg:''};
   checkMaintenanceMode();
   renderAnnouncement();
+  renderActivityFeed();
+  renderLiveBanner();
   renderCards();
   updStats();
   if(cu) loadNotifications();
@@ -1709,6 +1750,10 @@ function updateNav(){
     const verifIco=isVerif?`<span class="vico">✓</span>`:'';
     const unread=notifications.filter(n=>!n.read).length;
     nr.innerHTML=`
+      <button class="btn bgh bsm" onclick="openGlobalSearch()" title="Поиск">🔍</button>
+      <button class="btn bgh bsm" onclick="oOv('questsOv');renderQuests();" title="Задания">🎯</button>
+      <button class="btn bgh bsm" onclick="showAuction()" title="Аукцион">🏺</button>
+      <button class="btn bgh bsm" onclick="toggleLanguage()" title="Язык">🌐 EN</button>
       <button class="btn bgh bsm" onclick="showPostsPage()">📰 Посты</button>
       <button class="btn bgh bsm" onclick="showForumPage()">💬 Форум</button>
       <button class="btn bgh bsm" onclick="showChatPage()">💬 Чат</button>
@@ -1993,8 +2038,10 @@ async function showUserProfile(userId){
           ${isVerif?`<span class="vico" title="Верифицирован">✓</span>`:''}
           ${u.role!=='user'?`<span class="rb ${roleClass(u.role)}">${roleName(u.role)}</span>`:''}
           ${titleBadge}
+          ${levelBadgeHtml(u)}
           ${forumBadge(u)}
         </div>
+        ${u.bio||cu&&cu.id===userId?`<div style="font-size:13px;color:var(--m);margin-top:6px;max-width:400px;">${u.bio?escHtml(u.bio):''}${cu&&cu.id===userId?` <span style="cursor:pointer;color:var(--a);text-decoration:underline;" onclick="editBio()">${u.bio?'✏️ изменить':'+ добавить био'}</span>`:''}</div>`:''}
         <div class="prof-un">@${u.un}</div>
         <div class="prof-badges">
           <span class="rb ${isPrem?'rprem':roleClass(u.role)}">${isPrem?'⭐ Премиум':roleName(u.role)}</span>
@@ -2023,6 +2070,10 @@ async function showUserProfile(userId){
       <button class="btn bgold bsm" onclick="openGiftCoins('${userId}')">🎁 Подарить монеты</button>
       <span style="font-size:12px;color:var(--m);align-self:center;">👥 ${followerCount(userId)} подписчиков</span>
     </div>`:''}
+    <div class="prof-section">
+      <div class="prof-section-title">🏅 Достижения</div>
+      ${achievementsHtml(u)}
+    </div>
     ${cu&&cu.id===userId?`
     <div class="prof-section">
       <div class="prof-section-title">🛍 Мои покупки</div>
@@ -2306,6 +2357,7 @@ async function addNotification(uid,msg,type='info'){
   const data={uid,msg,type,ts:Date.now(),read:false};
   const newId=await fsAdd('notifications',data);
   if(cu&&cu.id===uid){notifications.unshift({id:newId,...data});updateNotifBell();}
+  fsAdd('pushQueue',{uid,text:`🔔 <b>TK Fame List</b>\n${msg}`,ts:Date.now()});
 }
 function toggleNotifPanel(){
   const p=document.getElementById('notifPanel');
@@ -2398,7 +2450,17 @@ function renderAdmPosts(){
   if(!localPosts.length){g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><div class="ei">📭</div><h3>Постов нет</h3></div>`;return;}
   g.innerHTML=localPosts.sort((a,b)=>(b.ts||0)-(a.ts||0)).map(p=>postCardHtml(p,true)).join('');
 }
+function postReactionCount(p){return Object.keys(p.likes||{}).length;}
+async function togglePostLike(id){
+  if(!cu){showAuth();return;}
+  const p=localPosts.find(x=>x.id===id);if(!p)return;
+  const likes={...(p.likes||{})};
+  if(likes[cu.id])delete likes[cu.id];else likes[cu.id]=true;
+  p.likes=likes;await fsUpdate('posts',id,{likes});
+  renderPublicPosts();
+}
 function postCardHtml(p,admin){
+  const liked=cu&&p.likes&&p.likes[cu.id];
   return`<div class="post-card">
     ${p.img?`<img class="post-img" src="${p.img}" alt="">`:`<div class="post-img-placeholder">📰</div>`}
     <div class="post-body">
@@ -2412,6 +2474,7 @@ function postCardHtml(p,admin){
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;">
         <button class="btn bgh bsm" onclick="viewPost('${p.id}')">👁 Читать</button>
+        <button class="btn bsm ${liked?'bpr':'bgh'}" onclick="togglePostLike('${p.id}')">${liked?'❤️':'🤍'} ${postReactionCount(p)}</button>
         ${admin&&isDeputy()?`<button class="btn bdn bsm" onclick="delPost('${p.id}')">🗑</button>`:''}
       </div>
     </div></div>`;
@@ -2504,6 +2567,10 @@ function aTab(tab,el){
     document.getElementById('rulesInp').value=siteSettings.rulesText||'';
     document.getElementById('announceInp').value=siteSettings.announcement||'';
     document.getElementById('announceColorInp').value=siteSettings.announceColor||'#7b61ff';
+    document.getElementById('liveUrlInp').value=(siteSettings.liveNow&&siteSettings.liveNow.url)||'';
+    document.getElementById('liveTitleInp').value=(siteSettings.liveNow&&siteSettings.liveNow.title)||'';
+    document.getElementById('livePlatformInp').value=(siteSettings.liveNow&&siteSettings.liveNow.platform)||'';
+    renderDashboard();
   }
   if(tab==='reports'&&isModer()){document.getElementById('tReports').style.display='block';renderReportsAdmin();}
   if(tab==='promo'&&isDeputy()){document.getElementById('tPromo').style.display='block';}
@@ -2822,6 +2889,8 @@ async function showForumCatPage(catId){
   document.getElementById('fCatTitle').textContent=(cat.icon||'💬')+' '+cat.name;
   document.getElementById('fCatDesc').textContent=cat.desc||'';
   document.getElementById('fNewTopicBtn').style.display=cu?'inline-flex':'none';
+  const subBtn=document.getElementById('fCatSubBtn');
+  if(subBtn){subBtn.style.display=cu?'inline-flex':'none';subBtn.textContent=(cu&&cu.subscribedCats&&cu.subscribedCats.includes(catId))?'✅ Вы подписаны':'🔔 Подписаться';}
   const searchInp=document.getElementById('forumSearchInp');if(searchInp)searchInp.value='';
   document.querySelectorAll('.fsort-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode==='new'));
   const list=document.getElementById('forumTopicsList');
@@ -2872,20 +2941,31 @@ async function renderForumReplies(topicId){
   replies.sort((a,b)=>(a.ts||0)-(b.ts||0));
   curForumTopic._replies=replies;
   if(!replies.length){list.innerHTML=`<div class="empty"><div class="ei">💬</div><h3>Ответов пока нет</h3></div>`;return;}
-  list.innerHTML=replies.map(r=>{
+  const roots=replies.filter(r=>!r.parentReplyId);
+  const childrenOf=pid=>replies.filter(r=>r.parentReplyId===pid);
+  const renderOne=(r,nested)=>{
     const au=localUsers.find(u=>u.id===r.authorId);
-    return`<div class="freply">
+    return`<div class="freply" style="${nested?'margin-left:32px;border-left:2px solid var(--a3);':''}">
       <div class="freply-hd">
         ${fUserAvHtml(au,'freply-av')}
         <span class="freply-name" style="cursor:pointer;" onclick="openForumProfile('${r.authorId}')">${escHtml(r.authorName||'?')}</span>${forumBadge(au)}
         <span class="freply-time">${timeAgoF(r.ts)}</span>
+        ${cu&&!curForumTopic.locked?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="replyToReply('${r.id}','${(r.authorName||'').replace(/'/g,"")}')">↩️</button>`:''}
         ${(cu&&r.authorId===cu.id)?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="editForumReplyPrompt('${r.id}','${topicId}')">✏️</button>`:''}
         ${(cu&&r.authorId!==cu.id&&!isModer())?`<button class="btn bgh bsm" style="padding:3px 8px;margin-left:6px;" onclick="reportContent('forumReply','${r.id}')">🚩</button>`:''}
         ${(isModer()||(cu&&r.authorId===cu.id))?`<button class="btn bdn bsm" style="padding:3px 8px;margin-left:6px;" onclick="deleteForumReply('${r.id}','${topicId}')">🗑</button>`:''}
       </div>
       <div class="freply-body">${renderMarkdown(r.body)}</div>
     </div>`;
-  }).join('');
+  };
+  list.innerHTML=roots.map(r=>renderOne(r,false)+childrenOf(r.id).map(c=>renderOne(c,true)).join('')).join('');
+}
+let replyToId=null;
+function replyToReply(id,authorName){
+  replyToId=id;
+  const inp=document.getElementById('forumReplyInp');
+  inp.value=`@${authorName} `;inp.focus();
+  notify(`↩️ Ответ для ${authorName} — просто напишите текст`,'ok');
 }
 function backToForumCat(){if(curForumCatId)showForumCatPage(curForumCatId);else showForumPage();}
 
@@ -2916,6 +2996,9 @@ async function createForumTopic(){
   if(!newId){notify('❌ Не удалось создать тему','err');return;}
   processMentions(bodyText,`тема "${title}"`,cu);
   clearDraft();
+  addXp(cu.id,5);checkAchievements(cu);
+  if(!(cu.achievements||[]).includes('first_topic'))grantAchievement(cu.id,'first_topic');
+  notifyCatSubscribers(curForumCatId,title,cu.name);
   cu.lastTopicTs=Date.now();fsUpdate('users',cu.id,{lastTopicTs:cu.lastTopicTs});
   cOvId('newTopicOv');notify('✅ Тема создана!','ok');
   const cat=localForumCat.find(c=>c.id===curForumCatId);if(cat){cat.topicsCount=(cat.topicsCount||0)+1;fsUpdate('forumCategories',cat.id,{topicsCount:cat.topicsCount});}
@@ -2931,9 +3014,13 @@ async function postForumReply(){
   if(!bodyText){notify('Введите текст ответа!','err');return;}
   if(containsBadWords(bodyText)){notify('❌ Текст содержит запрещённые слова','err');return;}
   const data={topicId:curForumTopic.id,body:bodyText,authorId:cu.id,authorName:cu.name,ts:Date.now()};
+  if(replyToId){data.parentReplyId=replyToId;replyToId=null;}
   const newId=await fsAdd('forumReplies',data);
   if(!newId){notify('❌ Не удалось отправить','err');return;}
   processMentions(bodyText,`ответ в теме "${curForumTopic.title}"`,cu);
+  addXp(cu.id,2);
+  cu.forumReplyCount=(cu.forumReplyCount||0)+1;fsUpdate('users',cu.id,{forumReplyCount:cu.forumReplyCount});
+  if(cu.forumReplyCount>=20)grantAchievement(cu.id,'active_forum');
   inp.value='';
   const newCount=(curForumTopic.repliesCount||0)+1;
   curForumTopic.repliesCount=newCount;
@@ -3316,6 +3403,331 @@ async function addEvent(){
 }
 async function delEvent(id){await fsDel('events',id);showEventsCalendar();notify('🗑 Удалено','err');}
 
+// ── ОБНОВЛЕНИЕ: РЕПУТАЦИЯ / УРОВНИ (XP) ─────────────────────────────────────
+function xpForLevel(lvl){return lvl*lvl*50;}
+function levelFromXp(xp){let l=1;while(xpForLevel(l+1)<=xp)l++;return l;}
+async function addXp(uid,amount){
+  const u=localUsers.find(x=>x.id===uid);if(!u)return;
+  const oldLevel=levelFromXp(u.xp||0);
+  const newXp=(u.xp||0)+amount;
+  const newLevel=levelFromXp(newXp);
+  u.xp=newXp;
+  await fsUpdate('users',uid,{xp:newXp});
+  if(cu&&cu.id===uid)cu.xp=newXp;
+  if(newLevel>oldLevel){
+    addNotification(uid,`🎖 Новый уровень: ${newLevel}! Продолжайте в том же духе`,'ok');
+  }
+}
+function levelBadgeHtml(u){
+  if(!u)return'';
+  const lvl=levelFromXp(u.xp||0);
+  return `<span class="rb" style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);color:var(--a);">Ур. ${lvl}</span>`;
+}
+
+// ── ОБНОВЛЕНИЕ: БИО ПРОФИЛЯ ──────────────────────────────────────────────────
+function editBio(){
+  if(!cu)return;
+  const val=prompt('Расскажите о себе (до 200 символов):',cu.bio||'');
+  if(val===null)return;
+  const bio=val.trim().slice(0,200);
+  cu.bio=bio;const u=localUsers.find(x=>x.id===cu.id);if(u)u.bio=bio;
+  fsUpdate('users',cu.id,{bio});
+  showUserProfile(cu.id);
+}
+
+// ── ОБНОВЛЕНИЕ: АВТО-ДОСТИЖЕНИЯ ──────────────────────────────────────────────
+const ACHIEVEMENTS={
+  first_topic:{icon:'✍️',name:'Первая тема',desc:'Создали первую тему на форуме'},
+  ten_purchases:{icon:'🛍️',name:'Шопоголик',desc:'Купили 10 предметов в магазине'},
+  oldtimer:{icon:'🕰️',name:'Старожил',desc:'С нами уже больше года'},
+  active_forum:{icon:'💬',name:'Душа форума',desc:'20+ ответов на форуме'},
+  streak_7:{icon:'🔥',name:'Неделя подряд',desc:'Стрик входа 7 дней'},
+};
+async function grantAchievement(uid,key){
+  const u=localUsers.find(x=>x.id===uid);if(!u)return;
+  const list=u.achievements||[];
+  if(list.includes(key))return;
+  const newList=[...list,key];
+  u.achievements=newList;
+  await fsUpdate('users',uid,{achievements:newList});
+  const a=ACHIEVEMENTS[key];
+  addNotification(uid,`${a.icon} Новое достижение: «${a.name}»!`,'ok');
+}
+function checkAchievements(u){
+  if((u.purchases||[]).length>=10)grantAchievement(u.id,'ten_purchases');
+  if(u.streak>=7)grantAchievement(u.id,'streak_7');
+  if(u.joined){
+    const years=(Date.now()-new Date(u.joined).getTime())/(365*86400000);
+    if(years>=1)grantAchievement(u.id,'oldtimer');
+  }
+}
+function achievementsHtml(u){
+  const list=(u.achievements||[]).map(k=>ACHIEVEMENTS[k]).filter(Boolean);
+  if(!list.length)return`<div style="color:var(--m);font-size:13px;">Пока нет достижений</div>`;
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;">`+list.map(a=>`<div class="fcard" style="padding:12px 16px;text-align:center;min-width:100px;" title="${escHtml(a.desc)}">
+    <div style="font-size:24px;">${a.icon}</div><div style="font-size:11px;font-weight:700;margin-top:4px;">${escHtml(a.name)}</div>
+  </div>`).join('')+`</div>`;
+}
+
+// ── ОБНОВЛЕНИЕ: ПОДПИСКА НА РАЗДЕЛЫ ФОРУМА ──────────────────────────────────
+async function toggleCatSubscription(catId){
+  if(!cu){showAuth();return;}
+  const subs=cu.subscribedCats||[];
+  const isSub=subs.includes(catId);
+  const newSubs=isSub?subs.filter(x=>x!==catId):[...subs,catId];
+  cu.subscribedCats=newSubs;
+  const u=localUsers.find(x=>x.id===cu.id);if(u)u.subscribedCats=newSubs;
+  await fsUpdate('users',cu.id,{subscribedCats:newSubs});
+  notify(isSub?'🔕 Отписались от раздела':'🔔 Подписались на раздел','ok');
+  const btn=document.getElementById('fCatSubBtn');
+  if(btn)btn.textContent=isSub?'🔔 Подписаться':'✅ Вы подписаны';
+}
+function notifyCatSubscribers(catId,topicTitle,authorName){
+  localUsers.forEach(u=>{
+    if((u.subscribedCats||[]).includes(catId)&&(!cu||u.id!==cu.id)){
+      addNotification(u.id,`🔔 Новая тема в разделе: «${topicTitle}» от ${authorName}`,'info');
+    }
+  });
+}
+
+// ── ОБНОВЛЕНИЕ: ЛЕНТА АКТИВНОСТИ НА ГЛАВНОЙ ─────────────────────────────────
+async function renderActivityFeed(){
+  const box=document.getElementById('activityFeedBox');if(!box)return;
+  const [topics,users]=[await fsGetAll('forumTopics'),localUsers];
+  const events=[];
+  topics.sort((a,b)=>(b.ts||0)-(a.ts||0)).slice(0,5).forEach(t=>events.push({icon:'💬',text:`Новая тема на форуме: «${t.title}»`,ts:t.ts,action:()=>goToForumTopic(t.catId,t.id)}));
+  users.filter(u=>u.joined).sort((a,b)=>new Date(b.joined)-new Date(a.joined)).slice(0,5).forEach(u=>events.push({icon:'👋',text:`${u.name} присоединился(-ась) к сообществу`,ts:new Date(u.joined).getTime()}));
+  events.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const top=events.slice(0,6);
+  if(!top.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="fcard" style="margin-bottom:22px;">
+    <div style="font-weight:700;margin-bottom:12px;">📡 Лента активности</div>
+    ${top.map(e=>`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--b);font-size:13px;">
+      <span>${e.icon}</span><span style="flex:1;">${escHtml(e.text)}</span><span style="color:var(--m);font-size:11px;">${timeAgoF(e.ts)}</span>
+    </div>`).join('')}
+  </div>`;
+}
+// ── ОБНОВЛЕНИЕ: КВЕСТЫ/ЗАДАНИЯ ───────────────────────────────────────────────
+const QUESTS=[
+  {id:'q_topics3',name:'Автор',desc:'Создайте 3 темы на форуме',icon:'✍️',target:3,check:u=>u.questTopics||0,reward:100},
+  {id:'q_replies5',name:'Собеседник',desc:'Оставьте 5 ответов на форуме',icon:'💬',target:5,check:u=>u.forumReplyCount||0,reward:80},
+  {id:'q_likes5',name:'Душа компании',desc:'Поставьте 5 лайков темам',icon:'❤️',target:5,check:u=>u.questLikes||0,reward:60},
+  {id:'q_streak3',name:'Постоянство',desc:'Стрик входа 3 дня подряд',icon:'🔥',target:3,check:u=>u.streak||0,reward:70},
+];
+function renderQuests(){
+  const box=document.getElementById('questsBox');if(!box||!cu)return;
+  box.innerHTML=QUESTS.map(q=>{
+    const progress=Math.min(q.check(cu),q.target);
+    const done=progress>=q.target;
+    const claimed=(cu.claimedQuests||[]).includes(q.id);
+    return`<div class="fcard" style="margin-bottom:10px;display:flex;align-items:center;gap:14px;">
+      <div style="font-size:26px;">${q.icon}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;">${q.name}</div>
+        <div style="font-size:12px;color:var(--m);margin-bottom:6px;">${q.desc}</div>
+        <div style="height:6px;background:var(--s2);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${(progress/q.target)*100}%;background:var(--a);"></div></div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:var(--m);margin-bottom:4px;">${progress}/${q.target}</div>
+        ${claimed?`<span style="color:var(--ok);font-size:12px;">✅ Забрано</span>`:done?`<button class="btn bgold bsm" onclick="claimQuest('${q.id}')">🪙 ${q.reward}</button>`:`<span style="font-size:12px;color:var(--m);">🪙 ${q.reward}</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+async function claimQuest(id){
+  const q=QUESTS.find(x=>x.id===id);if(!q)return;
+  const claimed=cu.claimedQuests||[];if(claimed.includes(id))return;
+  const newClaimed=[...claimed,id];
+  const newCoins=(cu.coins||0)+q.reward;
+  cu.claimedQuests=newClaimed;cu.coins=newCoins;
+  await fsUpdate('users',cu.id,{claimedQuests:newClaimed,coins:newCoins});
+  updateNav();renderQuests();notify(`🎉 Задание выполнено! +${q.reward}🪙`,'ok');
+}
+
+// ── ОБНОВЛЕНИЕ: 2FA ДЛЯ КРИТИЧНЫХ ДЕЙСТВИЙ АДМИНОВ ──────────────────────────
+async function requestConfirmCode(){
+  const code=String(Math.floor(100000+Math.random()*900000));
+  await fsSet('settings','confirm_'+cu.id,{code,ts:Date.now()});
+  fsAdd('pushQueue',{uid:cu.id,text:`🔐 Код подтверждения действия: <b>${code}</b>\nНикому не сообщайте его.`,ts:Date.now()});
+  return code;
+}
+async function confirmCriticalAction(actionFn){
+  if(!cu)return;
+  notify('🔐 Код подтверждения отправлен вам в Telegram','ok');
+  await requestConfirmCode();
+  setTimeout(async()=>{
+    const entered=prompt('Введите 6-значный код из Telegram:');
+    if(!entered)return;
+    const doc=await fsGetDoc('settings','confirm_'+cu.id);
+    if(!doc||doc.code!==entered.trim()||Date.now()-doc.ts>5*60000){
+      notify('❌ Неверный или истёкший код','err');return;
+    }
+    actionFn();
+    fsDel('settings','confirm_'+cu.id);
+  },800);
+}
+
+// ── ОБНОВЛЕНИЕ: АУКЦИОН РЕДКИХ ПРЕДМЕТОВ ────────────────────────────────────
+async function showAuction(){
+  oOv('auctionOv');
+  const body=document.getElementById('auctionBody');
+  body.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+  const s=await fsGetDoc('settings','auction');
+  const auction=s||null;
+  const active=auction&&auction.endTs>Date.now();
+  const adminForm=isDeputy()?`<div class="fcard" style="margin-bottom:16px;">
+    <div class="fg"><label class="fl">Название лота</label><input class="fi" id="aucName" placeholder="Уникальная роспись основателя"/></div>
+    <div style="display:flex;gap:10px;">
+      <div class="fg" style="flex:1;"><label class="fl">Иконка</label><input class="fi" id="aucIcon" placeholder="🏆" maxlength="4"/></div>
+      <div class="fg" style="flex:1;"><label class="fl">Длительность (часы)</label><input class="fi" id="aucHours" type="number" placeholder="48"/></div>
+    </div>
+    <div class="fg"><label class="fl">Стартовая цена</label><input class="fi" id="aucStart" type="number" placeholder="500"/></div>
+    <button class="btn bpr" onclick="startAuction()" style="width:100%;">🚀 Запустить аукцион</button>
+    ${active?`<button class="btn bdn" onclick="endAuctionNow()" style="width:100%;margin-top:8px;">🏁 Завершить досрочно</button>`:''}
+  </div>`:'';
+  if(!active){body.innerHTML=adminForm+`<div class="empty"><div class="ei">🏺</div><h3>Сейчас аукциона нет</h3></div>`;return;}
+  const bids=auction.bids||{};
+  const entries=Object.entries(bids).sort((a,b)=>b[1]-a[1]);
+  const highest=entries[0];
+  body.innerHTML=adminForm+`<div class="fcard">
+    <div style="font-size:44px;text-align:center;margin-bottom:10px;">${auction.icon||'🏆'}</div>
+    <div style="text-align:center;font-weight:800;font-size:18px;margin-bottom:6px;">${escHtml(auction.itemName)}</div>
+    <div style="text-align:center;color:var(--m);font-size:13px;margin-bottom:16px;">До конца: ${timeAgoF(auction.endTs)}</div>
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--m);">Текущая ставка</div>
+      <div style="font-size:26px;font-weight:800;color:var(--gold);">🪙 ${highest?highest[1]:auction.startPrice}</div>
+      ${highest?`<div style="font-size:12px;color:var(--m);">от ${escHtml((localUsers.find(u=>u.id===highest[0])||{}).name||'?')}</div>`:''}
+    </div>
+    ${cu?`<button class="btn bpr" style="width:100%;" onclick="placeBid()">💰 Сделать ставку</button>`:'<div style="text-align:center;color:var(--m);font-size:13px;">Войдите, чтобы участвовать</div>'}
+  </div>`;
+}
+async function startAuction(){
+  const itemName=document.getElementById('aucName').value.trim();
+  const icon=document.getElementById('aucIcon').value.trim()||'🏆';
+  const hours=parseInt(document.getElementById('aucHours').value)||48;
+  const startPrice=parseInt(document.getElementById('aucStart').value)||500;
+  if(!itemName){notify('Введите название лота!','err');return;}
+  await fsSet('settings','auction',{itemName,icon,startPrice,endTs:Date.now()+hours*3600000,bids:{}});
+  notify('✅ Аукцион запущен','ok');showAuction();
+}
+async function placeBid(){
+  const s=await fsGetDoc('settings','auction');if(!s)return;
+  const bids=s.bids||{};
+  const entries=Object.entries(bids).sort((a,b)=>b[1]-a[1]);
+  const current=entries[0]?entries[0][1]:s.startPrice;
+  const min=current+Math.max(10,Math.round(current*0.05));
+  const amtStr=prompt(`Минимальная ставка: 🪙 ${min}. Ваша ставка:`,String(min));
+  const amt=parseInt(amtStr)||0;
+  if(amt<min){notify('Ставка слишком мала!','err');return;}
+  if(amt>(cu.coins||0)){notify('Недостаточно монет!','err');return;}
+  bids[cu.id]=amt;
+  await fsUpdate('settings','auction',{bids});
+  notify('✅ Ставка сделана!','ok');showAuction();
+}
+async function endAuctionNow(){
+  const s=await fsGetDoc('settings','auction');if(!s)return;
+  const entries=Object.entries(s.bids||{}).sort((a,b)=>b[1]-a[1]);
+  if(entries.length){
+    const [winnerId,amount]=entries[0];
+    const w=localUsers.find(u=>u.id===winnerId);
+    if(w){
+      const newCoins=Math.max(0,(w.coins||0)-amount);
+      await fsUpdate('users',winnerId,{coins:newCoins});
+      if(w.id===cu?.id){cu.coins=newCoins;updateNav();}
+      addNotification(winnerId,`🏆 Вы выиграли аукцион «${s.itemName}» за ${amount}🪙! Администрация свяжется с вами.`,'ok');
+    }
+  }
+  await fsDel('settings','auction');
+  notify('🏁 Аукцион завершён','ok');showAuction();
+}
+
+// ── ОБНОВЛЕНИЕ: МИНИ-ДАШБОРД С ГРАФИКАМИ (для админки) ─────────────────────
+function renderDashboard(){
+  const box=document.getElementById('dashboardBox');if(!box)return;
+  const days=[...Array(14)].map((_,i)=>{
+    const d=new Date();d.setDate(d.getDate()-(13-i));
+    return d.toISOString().split('T')[0];
+  });
+  const usersByDay=days.map(d=>localUsers.filter(u=>u.joined&&u.joined.startsWith(d)).length);
+  const maxU=Math.max(...usersByDay,1);
+  box.innerHTML=`<div class="fcard">
+    <div style="font-weight:700;margin-bottom:14px;">📈 Новые пользователи (14 дней)</div>
+    <div style="display:flex;align-items:flex-end;gap:4px;height:100px;">
+      ${usersByDay.map((v,i)=>`<div style="flex:1;background:var(--a3);border-radius:3px 3px 0 0;height:${Math.max(4,(v/maxU)*100)}%;" title="${days[i]}: ${v}"></div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--m);margin-top:6px;"><span>${days[0].slice(5)}</span><span>${days[13].slice(5)}</span></div>
+    <div style="margin-top:16px;display:flex;gap:20px;flex-wrap:wrap;font-size:13px;">
+      <div>👥 Всего юзеров: <b>${localUsers.length}</b></div>
+      <div>📰 Постов: <b>${localPosts.length}</b></div>
+      <div>💬 Разделов форума: <b>${localForumCat.length}</b></div>
+      <div>🎁 Розыгрышей: <b>${localGiveaways.length}</b></div>
+    </div>
+  </div>`;
+}
+
+// ── ОБНОВЛЕНИЕ: СТАТУС ЭФИРА (ручной, без внешнего API) ─────────────────────
+function renderLiveBanner(){
+  const box=document.getElementById('liveBannerBox');if(!box)return;
+  if(!siteSettings.liveNow||!siteSettings.liveNow.url){box.innerHTML='';return;}
+  const lv=siteSettings.liveNow;
+  box.innerHTML=`<a href="${lv.url}" target="_blank" class="fcard" style="margin-bottom:22px;display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--t);border-color:#ff3355;background:linear-gradient(90deg,rgba(255,51,85,.08),transparent);">
+    <div style="width:10px;height:10px;border-radius:50%;background:#ff3355;animation:avFrameSpin 1s infinite alternate;"></div>
+    <div><div style="font-weight:700;">🔴 Прямо сейчас: ${escHtml(lv.title||'Эфир')}</div><div style="font-size:12px;color:var(--m);">${lv.platform||''} · нажмите чтобы перейти</div></div>
+  </a>`;
+}
+async function saveLiveNow(){
+  const url=document.getElementById('liveUrlInp').value.trim();
+  const title=document.getElementById('liveTitleInp').value.trim();
+  const platform=document.getElementById('livePlatformInp').value.trim();
+  siteSettings.liveNow=url?{url,title,platform}:null;
+  await fsSet('settings','site',siteSettings);
+  renderLiveBanner();notify(url?'✅ Эфир опубликован':'✅ Баннер эфира убран','ok');
+}
+
+// ── ОБНОВЛЕНИЕ: EN-ПЕРЕКЛЮЧАТЕЛЬ (интерфейс) ────────────────────────────────
+const I18N_EN={
+  '📰 Посты':'📰 Posts','💬 Форум':'💬 Forum','💬 Чат':'💬 Chat','🏆 Топ':'🏆 Top','👑 Staff':'👑 Staff',
+  '🎁 Розыгрыши':'🎁 Giveaways','🛒 Магазин':'🛒 Shop','🔔 Уведомления':'🔔 Notifications','⚙️ Панель':'⚙️ Panel',
+  '📝 Заявка':'📝 Apply','🎨 Тема':'🎨 Theme','↩ Выйти':'↩ Log out','🏠 TK Fame List':'🏠 TK Fame List',
+};
+function toggleLanguage(){
+  const isEn=document.documentElement.getAttribute('lang')==='en';
+  document.documentElement.setAttribute('lang',isEn?'ru':'en');
+  applyLanguage(!isEn);
+  localStorage.setItem('tkfl_lang',isEn?'ru':'en');
+}
+function applyLanguage(toEn){
+  document.querySelectorAll('.navr button, .navl button').forEach(btn=>{
+    const txt=btn.textContent.trim();
+    if(toEn&&I18N_EN[txt])btn.textContent=I18N_EN[txt];
+    else if(!toEn){
+      const ruEntry=Object.entries(I18N_EN).find(([ru,en])=>en===txt);
+      if(ruEntry)btn.textContent=ruEntry[0];
+    }
+  });
+}
+
+// ── ОБНОВЛЕНИЕ: ГЛОБАЛЬНЫЙ ПОИСК ПО САЙТУ ───────────────────────────────────
+function openGlobalSearch(){document.getElementById('globalSearchInp').value='';document.getElementById('globalSearchResults').innerHTML='';oOv('globalSearchOv');setTimeout(()=>document.getElementById('globalSearchInp').focus(),150);}
+let globalSearchTimer=null;
+function onGlobalSearch(v){
+  clearTimeout(globalSearchTimer);
+  globalSearchTimer=setTimeout(async()=>{
+    const q=v.trim().toLowerCase();
+    const box=document.getElementById('globalSearchResults');
+    if(q.length<2){box.innerHTML='';return;}
+    box.innerHTML=`<div class="lder"><div class="ld"></div></div>`;
+    const catMatches=localCat.filter(it=>(it.name||'').toLowerCase().includes(q)).slice(0,5);
+    const postMatches=localPosts.filter(p=>(p.title||'').toLowerCase().includes(q)||(p.text||'').toLowerCase().includes(q)).slice(0,5);
+    const topics=await fsGetAll('forumTopics');
+    const topicMatches=topics.filter(t=>(t.title||'').toLowerCase().includes(q)).slice(0,5);
+    let html='';
+    if(catMatches.length)html+=`<div style="font-size:12px;color:var(--m);margin:10px 0 6px;">👤 Участники</div>`+catMatches.map(it=>`<div class="ftopic-row" onclick="cOvId('globalSearchOv');showProf('${it.id}')"><div class="ftopic-av">${it.em||'🙂'}</div><div class="ftopic-body"><div class="ftopic-title">${escHtml(it.name)}</div></div></div>`).join('');
+    if(postMatches.length)html+=`<div style="font-size:12px;color:var(--m);margin:10px 0 6px;">📰 Посты</div>`+postMatches.map(p=>`<div class="ftopic-row" onclick="cOvId('globalSearchOv');showPostsPage();viewPost('${p.id}')"><div class="ftopic-av">📰</div><div class="ftopic-body"><div class="ftopic-title">${escHtml(p.title)}</div></div></div>`).join('');
+    if(topicMatches.length)html+=`<div style="font-size:12px;color:var(--m);margin:10px 0 6px;">💬 Форум</div>`+topicMatches.map(t=>`<div class="ftopic-row" onclick="cOvId('globalSearchOv');goToForumTopic('${t.catId}','${t.id}')"><div class="ftopic-av">💬</div><div class="ftopic-body"><div class="ftopic-title">${escHtml(t.title)}</div></div></div>`).join('');
+    box.innerHTML=html||`<div class="empty"><div class="ei">🔍</div><h3>Ничего не найдено</h3></div>`;
+  },250);
+}
 // ── ОБНОВЛЕНИЕ: ПРАВИЛА СООБЩЕСТВА ──────────────────────────────────────────
 function showRules(){
   document.getElementById('rulesBody').textContent=siteSettings.rulesText||'Правила ещё не добавлены администрацией.';
